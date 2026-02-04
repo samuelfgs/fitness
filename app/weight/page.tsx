@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { weightMeasurements } from '@/lib/db/schema';
 import { desc, eq } from 'drizzle-orm';
 import { createClient } from '@/lib/supabase/server';
+import WeightEvolutionChart from '@/components/WeightEvolutionChart';
 
 import { redirect } from 'next/navigation';
 
@@ -43,10 +44,8 @@ export default async function WeightPage() {
       </div>
 
       <div className="flex-1 p-6">
-        {/* Chart Placeholder */}
-        <div className="h-64 bg-card rounded-[2rem] border border-border flex items-center justify-center mb-8 shadow-sm">
-          <p className="text-muted-foreground font-bold">Gráfico de Evolução (Em Breve)</p>
-        </div>
+        {/* Weight Evolution Chart */}
+        <WeightEvolutionChart weights={weights} />
 
         <div className="space-y-4">
           <h2 className="text-xl font-black text-foreground tracking-tight">Histórico</h2>
