@@ -16,8 +16,8 @@ const BottomNav: React.FC = () => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-lg border-t border-border px-6 py-3 pb-8 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] z-50">
-      <div className="flex justify-between items-center max-w-md mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-card/80 backdrop-blur-lg border-t border-border px-6 py-3 pb-8 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] z-50">
+      <div className="flex justify-between items-center">
         {navItems.map((item) => {
           const isActive = pathname === item.href || (item.id === 'log' && pathname.startsWith('/log'));
           

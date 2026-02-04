@@ -74,6 +74,20 @@ export const weightMeasurements = pgTable(
   })
 );
 
+export const waterLogs = pgTable(
+  "water_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").notNull(),
+    amount: integer("amount").notNull(), // stored in ml
+    date: timestamp("date").notNull().defaultNow(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    userIdIdx: index("idx_water_logs_user_id").on(table.userId),
+  })
+);
+
 export type Activity = typeof activities.$inferSelect;
 export type NewActivity = typeof activities.$inferInsert;
 export type Workout = typeof workouts.$inferSelect;
@@ -82,3 +96,5 @@ export type Exercise = typeof exercises.$inferSelect;
 export type NewExercise = typeof exercises.$inferInsert;
 export type WeightMeasurement = typeof weightMeasurements.$inferSelect;
 export type NewWeightMeasurement = typeof weightMeasurements.$inferInsert;
+export type WaterLog = typeof waterLogs.$inferSelect;
+export type NewWaterLog = typeof waterLogs.$inferInsert;

@@ -35,7 +35,7 @@ export default function RootLayout({
           </div>
         }>
           <QueryProvider>
-            <div className="max-w-md mx-auto min-h-screen bg-background border-x border-border shadow-2xl shadow-black/5">
+            <div className="max-w-md mx-auto min-h-screen bg-background">
               {children}
             </div>
           </QueryProvider>
