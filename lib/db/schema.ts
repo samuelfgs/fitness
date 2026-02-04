@@ -102,6 +102,26 @@ export const stepsLogs = pgTable(
   })
 );
 
+export const foodLogs = pgTable(
+  "food_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").notNull(),
+    mealName: varchar("meal_name", { length: 255 }).notNull(),
+    rawText: text("raw_text"),
+    content: jsonb("content").notNull(), // Detailed items
+    totalCalories: integer("total_calories").notNull(),
+    totalProtein: integer("total_protein"),
+    totalCarbs: integer("total_carbs"),
+    totalFat: integer("total_fat"),
+    date: timestamp("date").notNull().defaultNow(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    userIdIdx: index("idx_food_logs_user_id").on(table.userId),
+  })
+);
+
 export type Activity = typeof activities.$inferSelect;
 export type NewActivity = typeof activities.$inferInsert;
 export type Workout = typeof workouts.$inferSelect;
@@ -114,3 +134,5 @@ export type WaterLog = typeof waterLogs.$inferSelect;
 export type NewWaterLog = typeof waterLogs.$inferInsert;
 export type StepsLog = typeof stepsLogs.$inferSelect;
 export type NewStepsLog = typeof stepsLogs.$inferInsert;
+export type FoodLog = typeof foodLogs.$inferSelect;
+export type NewFoodLog = typeof foodLogs.$inferInsert;

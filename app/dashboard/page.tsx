@@ -7,9 +7,10 @@ import { TrendingUp, ArrowRight, Activity as ActivityIcon, Droplets, Footprints 
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
-import { weightMeasurements, workouts, activities, waterLogs, stepsLogs } from '@/lib/db/schema';
+import { weightMeasurements, workouts, activities, waterLogs, stepsLogs, foodLogs } from '@/lib/db/schema';
 import { desc, eq, and, gte, lte } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
+import { Utensils } from 'lucide-react';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -92,6 +93,19 @@ export default async function DashboardPage() {
   
   const totalSteps = todaysStepsLogs.reduce((acc, log) => acc + log.count, 0);
 
+  // Fetch today's food
+  const todaysFoodLogs = await db.select()
+    .from(foodLogs)
+    .where(
+        and(
+            eq(foodLogs.userId, user.id),
+            gte(foodLogs.date, todayStart),
+            lte(foodLogs.date, todayEnd)
+        )
+    );
+  
+  const totalCalories = todaysFoodLogs.reduce((acc, log) => acc + log.totalCalories, 0);
+
   const latestWeight = latestWeights.length > 0 ? latestWeights[0].weight : null;
   const previousWeight = latestWeights.length > 1 ? latestWeights[1].weight : null;
   
@@ -141,6 +155,20 @@ export default async function DashboardPage() {
             )}
           </Link>
 
+          <Link href="/food" className="bg-card p-6 rounded-[2rem] shadow-sm border border-border active:scale-95 transition-all">
+            <div className="flex items-center space-x-2 mb-3 text-muted-foreground">
+              <Utensils size={18} className="text-red-500" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Calorias</span>
+            </div>
+            <div className="flex items-end space-x-1">
+              <span className="text-4xl font-black text-foreground leading-none">{totalCalories}</span>
+              <span className="text-sm font-bold text-muted-foreground mb-1">kcal</span>
+            </div>
+            <div className="text-xs font-bold mt-2 text-muted-foreground">
+              Consumidas hoje
+            </div>
+          </Link>
+
           <div className="bg-card p-6 rounded-[2rem] shadow-sm border border-border">
             <div className="flex items-center space-x-2 mb-3 text-muted-foreground">
               <ActivityIcon size={18} />
@@ -171,16 +199,14 @@ export default async function DashboardPage() {
             </div>
           </Link>
 
-          <div className="bg-card p-6 rounded-[2rem] shadow-sm border border-border">
+          <div className="bg-card p-6 rounded-[2rem] shadow-sm border border-border col-span-2">
             <div className="flex items-center space-x-2 mb-3 text-muted-foreground">
               <Footprints size={18} className="text-purple-500" />
               <span className="text-[10px] font-black uppercase tracking-widest">Passos</span>
             </div>
             <div className="flex items-end space-x-1">
               <span className="text-4xl font-black text-foreground leading-none">{totalSteps}</span>
-            </div>
-            <div className="text-xs font-bold mt-2 text-muted-foreground">
-              Meta: 10k
+              <span className="text-sm font-bold text-muted-foreground mb-1 ml-2">de 10.000 passos</span>
             </div>
           </div>
         </div>
