@@ -33,6 +33,9 @@ export async function parseFood(rawText: string, history: { role: string, conten
     Current History of this conversation:
     ${history.map(h => `${h.role}: ${h.content}`).join('\n')}
 
+    Reference Data (Use these values if the food matches, prioritizing these over general estimates):
+    - Leite Camponesa: Porcao 200ml, Kcal 96, Carbs 9.2, Proteinas 14, Gorduras 0
+
     Rules for data normalization:
     1. Prettify and Normalize: Convert all names to "Title Case" (e.g., "lanche da tarde" -> "Lanche da Tarde").
     2. Canonical Names: Use standard food names and correct typos (e.g., "ababax" -> "Abacaxi", "frango grelhad" -> "Frango Grelhado").

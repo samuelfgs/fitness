@@ -187,7 +187,10 @@ export default function LogFoodPage() {
                               P: {item.protein}g • C: {item.carbs}g • G: {item.fat}g
                             </span>
                           </div>
-                          <span className="text-muted-foreground font-black">{item.quantity}</span>
+                          <div className="flex flex-col items-end">
+                            <span className="text-muted-foreground font-black">{item.quantity}</span>
+                            <span className="text-[10px] text-red-500 font-bold">{item.calories} kcal</span>
+                          </div>
                         </div>
                       ))}
                     </div>
