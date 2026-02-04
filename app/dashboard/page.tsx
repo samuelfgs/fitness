@@ -191,8 +191,8 @@ export default async function DashboardPage() {
               <span className="text-[10px] font-black uppercase tracking-widest">Água</span>
             </div>
             <div className="flex items-end space-x-1">
-              <span className="text-4xl font-black text-foreground leading-none">{totalWater}</span>
-              <span className="text-sm font-bold text-muted-foreground mb-1">ml</span>
+              <span className="text-4xl font-black text-foreground leading-none">{(totalWater / 1000).toFixed(1)}</span>
+              <span className="text-sm font-bold text-muted-foreground mb-1">L</span>
             </div>
             <div className="text-xs font-bold mt-2 text-muted-foreground">
               Total de hoje

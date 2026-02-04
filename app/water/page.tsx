@@ -53,7 +53,7 @@ export default async function WaterPage() {
         <div className="bg-primary/5 border border-primary/20 rounded-[2rem] p-6 mb-8 flex items-center justify-between">
             <div>
                 <p className="text-muted-foreground font-bold text-xs uppercase tracking-widest mb-1">Total Hoje</p>
-                <p className="text-4xl font-black text-primary">{todayTotal}<span className="text-lg text-muted-foreground ml-1">ml</span></p>
+                <p className="text-4xl font-black text-primary">{(todayTotal / 1000).toFixed(1)}<span className="text-lg text-muted-foreground ml-1">L</span></p>
             </div>
             <div className="h-12 w-12 bg-blue-500/10 rounded-full flex items-center justify-center text-blue-500">
                 <Droplets size={24} fill="currentColor" className="opacity-50" />

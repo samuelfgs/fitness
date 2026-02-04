@@ -10,12 +10,21 @@ import { eq, and, gte, lte, desc } from "drizzle-orm";
 const apiKey = process.env.GEMINI_API_KEY;
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
+// Prioritized list of models based on testing
+const MODELS_TO_TRY = [
+  "gemini-2.5-flash",
+  "gemini-flash-latest",
+  "gemini-2.5-flash-lite",
+  "gemini-3-flash-preview",
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-1.5-flash"
+];
+
 export async function parseFood(rawText: string, history: { role: string, content: string }[] = []) {
   if (!genAI) {
     throw new Error("Gemini API key is not configured");
   }
-
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
   const prompt = `
     Analyze the following food consumption text and extract the meals, items, calories, and macros (protein, carbs, fat).
@@ -23,6 +32,11 @@ export async function parseFood(rawText: string, history: { role: string, conten
     
     Current History of this conversation:
     ${history.map(h => `${h.role}: ${h.content}`).join('\n')}
+
+    Rules for data normalization:
+    1. Prettify and Normalize: Convert all names to "Title Case" (e.g., "lanche da tarde" -> "Lanche da Tarde").
+    2. Canonical Names: Use standard food names and correct typos (e.g., "ababax" -> "Abacaxi", "frango grelhad" -> "Frango Grelhado").
+    3. Language: Keep all names in Portuguese (PT-BR).
 
     Return the result as a JSON object with the following structure:
     {
@@ -46,23 +60,41 @@ export async function parseFood(rawText: string, history: { role: string, conten
     Ensure totalCalories/Protein/Carbs/Fat for the meal is the sum of its items.
   `;
 
-  try {
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const aiText = response.text();
-    
-    const jsonMatch = aiText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error("Could not find JSON in AI response");
+  let lastError: any = null;
+
+  for (const modelName of MODELS_TO_TRY) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const aiText = response.text();
+      
+      const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("Could not find JSON in AI response");
+      }
+      
+      return JSON.parse(jsonMatch[0]);
+    } catch (error: any) {
+      lastError = error;
+      const isQuotaError = error.message?.includes("429") || error.message?.includes("RESOURCE_EXHAUSTED");
+      
+      if (isQuotaError) {
+        console.warn(`Quota exceeded for ${modelName}, trying next model...`);
+        continue; // Try next model
+      }
+      
+      // If it's not a quota error, throw it immediately
+      throw error;
     }
-    
-    return JSON.parse(jsonMatch[0]);
-  } catch (error: any) {
-    if (error.message?.includes("429")) {
-      throw new Error("Limite de cota atingido. Tente novamente em 1 minuto.");
-    }
-    throw error;
   }
+
+  // If we exhausted all models
+  if (lastError?.message?.includes("429") || lastError?.message?.includes("RESOURCE_EXHAUSTED")) {
+    throw new Error("O limite de uso da IA foi atingido em todos os modelos disponíveis. Por favor, tente novamente mais tarde.");
+  }
+  
+  throw lastError || new Error("Erro ao processar sua refeição.");
 }
 
 export async function saveFood(meals: any[], rawText: string) {
