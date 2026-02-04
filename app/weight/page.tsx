@@ -3,10 +3,22 @@ import { ArrowLeft, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import { weightMeasurements } from '@/lib/db/schema';
-import { desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
+import { createClient } from '@/lib/supabase/server';
 
 export default async function WeightPage() {
-  const weights = await db.select().from(weightMeasurements).orderBy(desc(weightMeasurements.date));
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    // This is now a fallback, proxy handles it
+    return null;
+  }
+
+  const weights = await db.select()
+    .from(weightMeasurements)
+    .where(eq(weightMeasurements.userId, user.id))
+    .orderBy(desc(weightMeasurements.date));
 
   return (
     <div className="min-h-screen flex flex-col bg-background pb-32">

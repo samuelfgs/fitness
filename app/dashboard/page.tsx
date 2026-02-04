@@ -9,15 +9,11 @@ import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
 import { weightMeasurements, workouts, activities } from '@/lib/db/schema';
 import { desc, eq, and, gte, lte } from 'drizzle-orm';
+import { redirect } from 'next/navigation';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    // Redirect to login handled by middleware usually, but good fallback
-    return <div>Please log in</div>;
-  }
 
   // Fetch latest weights
   const latestWeights = await db.select()
