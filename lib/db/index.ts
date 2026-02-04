@@ -9,8 +9,15 @@ if (!connectionString) {
 }
 
 // Create postgres client
-// Note: postgres-js doesn't have an .on('error') method. 
-// Errors are handled during query execution.
+if (connectionString) {
+  try {
+    const url = new URL(connectionString.replace('postgres://', 'http://').replace('postgresql://', 'http://'));
+    console.log(`[DB Init] Attempting connection to host: ${url.hostname}`);
+  } catch (e) {
+    console.log('[DB Init] Could not parse DATABASE_URL for logging');
+  }
+}
+
 const client = connectionString ? postgres(connectionString, {
   ssl: 'require',
   prepare: false, // Required for PGBouncer/Transaction mode in serverless
