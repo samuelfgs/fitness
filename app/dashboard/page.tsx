@@ -3,14 +3,13 @@ import { Activity, WeightEntry, ActivityType } from '@/lib/types';
 import ActivityCard from '@/components/ActivityCard';
 import BottomNav from '@/components/BottomNav';
 import { UserAvatar } from '@/components/UserAvatar';
-import { TrendingUp, ArrowRight, Activity as ActivityIcon, Droplets, Footprints } from 'lucide-react';
+import { TrendingUp, ArrowRight, Activity as ActivityIcon, Droplets, Footprints, Utensils } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
-import { weightMeasurements, workouts, activities, waterLogs, stepsLogs, foodLogs } from '@/lib/db/schema';
+import { weightMeasurements, workouts, activities, waterLogs, stepsLogs, foodLogs, profiles } from '@/lib/db/schema';
 import { desc, eq, and, gte, lte } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
-import { Utensils } from 'lucide-react';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -44,7 +43,8 @@ export default async function DashboardPage() {
     todaysWorkouts,
     todaysWaterLogs,
     todaysStepsLogs,
-    todaysFoodLogs
+    todaysFoodLogs,
+    userProfile
   ] = await Promise.all([
     // Fetch latest weights
     db.select()
@@ -106,9 +106,16 @@ export default async function DashboardPage() {
               gte(foodLogs.date, todayStart),
               lte(foodLogs.date, todayEnd)
           )
-      )
+      ),
+
+    // Fetch user profile
+    db.select()
+      .from(profiles)
+      .where(eq(profiles.id, user.id))
+      .limit(1)
   ]);
   
+  const profile = userProfile.length > 0 ? userProfile[0] : null;
   const totalWater = todaysWaterLogs.reduce((acc, log) => acc + log.amount, 0);
   const totalSteps = todaysStepsLogs.reduce((acc, log) => acc + log.count, 0);
   const totalCalories = todaysFoodLogs.reduce((acc, log) => acc + log.totalCalories, 0);
@@ -120,6 +127,24 @@ export default async function DashboardPage() {
   const latestWeightKg = latestWeight ? latestWeight / 1000 : null;
   const previousWeightKg = previousWeight ? previousWeight / 1000 : null;
   const weightDiff = latestWeightKg && previousWeightKg ? latestWeightKg - previousWeightKg : 0;
+
+  // Calculate BMI (IMC)
+  let bmi = null;
+  let bmiCategory = { label: '', color: '' };
+  if (latestWeightKg && profile?.height) {
+    const heightMeters = profile.height / 100;
+    bmi = latestWeightKg / (heightMeters * heightMeters);
+    
+    if (bmi < 18.5) {
+      bmiCategory = { label: 'Abaixo', color: 'bg-yellow-500/10 text-yellow-500' };
+    } else if (bmi < 25) {
+      bmiCategory = { label: 'Ideal', color: 'bg-green-500/10 text-green-500' };
+    } else if (bmi < 30) {
+      bmiCategory = { label: 'Sobrepeso', color: 'bg-yellow-500/10 text-yellow-500' };
+    } else {
+      bmiCategory = { label: 'Obeso', color: 'bg-red-500/10 text-red-500' };
+    }
+  }
 
   const userName = user?.user_metadata?.full_name?.split(' ')[0] || 'Atleta';
   const userAvatar = user?.user_metadata?.avatar_url || "https://picsum.photos/100/100";
@@ -155,11 +180,18 @@ export default async function DashboardPage() {
               <span className="text-4xl font-black text-foreground leading-none">{latestWeightKg?.toFixed(1) ?? '--'}</span>
               <span className="text-sm font-bold text-muted-foreground mb-1">kg</span>
             </div>
-            {latestWeightKg && previousWeightKg && (
-               <div className={`text-xs font-black mt-2 inline-flex items-center px-2 py-1 rounded-lg ${weightDiff <= 0 ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                  {weightDiff > 0 ? '+' : ''}{weightDiff.toFixed(1)} kg
-               </div>
-            )}
+            <div className="flex flex-wrap gap-2 mt-2">
+              {latestWeightKg && previousWeightKg && (
+                 <div className={`text-[10px] font-black inline-flex items-center px-2 py-1 rounded-lg ${weightDiff <= 0 ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                    {weightDiff > 0 ? '+' : ''}{weightDiff.toFixed(1)} kg
+                 </div>
+              )}
+              {bmi && (
+                <div className={`text-[10px] font-black inline-flex items-center px-2 py-1 rounded-lg ${bmiCategory.color}`}>
+                  IMC {bmi.toFixed(1)}
+                </div>
+              )}
+            </div>
           </Link>
 
           <Link href="/food" className="bg-card p-6 rounded-[2rem] shadow-sm border border-border active:scale-95 transition-all">
@@ -169,10 +201,12 @@ export default async function DashboardPage() {
             </div>
             <div className="flex items-end space-x-1">
               <span className="text-4xl font-black text-foreground leading-none">{totalCalories}</span>
-              <span className="text-sm font-bold text-muted-foreground mb-1">kcal</span>
+              <span className="text-sm font-bold text-muted-foreground mb-1">
+                {profile?.kcalGoal ? `/ ${profile.kcalGoal}` : 'kcal'}
+              </span>
             </div>
             <div className="text-xs font-bold mt-2 text-muted-foreground">
-              Consumidas hoje
+              {profile?.kcalGoal ? 'Meta diária' : 'Consumidas hoje'}
             </div>
           </Link>
 

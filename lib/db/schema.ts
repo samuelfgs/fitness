@@ -122,6 +122,18 @@ export const foodLogs = pgTable(
   })
 );
 
+export const profiles = pgTable(
+  "profiles",
+  {
+    id: uuid("id").primaryKey(), // Match auth.users id
+    age: integer("age"),
+    height: integer("height"), // in cm
+    desiredWeight: integer("desired_weight"), // in grams
+    kcalGoal: integer("kcal_goal"),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  }
+);
+
 export type Activity = typeof activities.$inferSelect;
 export type NewActivity = typeof activities.$inferInsert;
 export type Workout = typeof workouts.$inferSelect;
@@ -136,3 +148,5 @@ export type StepsLog = typeof stepsLogs.$inferSelect;
 export type NewStepsLog = typeof stepsLogs.$inferInsert;
 export type FoodLog = typeof foodLogs.$inferSelect;
 export type NewFoodLog = typeof foodLogs.$inferInsert;
+export type Profile = typeof profiles.$inferSelect;
+export type NewProfile = typeof profiles.$inferInsert;

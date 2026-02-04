@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { LogOut } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 import { signOut } from '@/app/actions/auth';
+import Link from 'next/link';
 
 interface UserAvatarProps {
   userAvatar: string;
@@ -33,9 +34,21 @@ export function UserAvatar({ userAvatar }: UserAvatarProps) {
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-2xl shadow-xl z-[100] overflow-hidden animate-in fade-in zoom-in duration-200">
-          <div className="p-2">
+          <div className="p-2 space-y-1">
+            <Link 
+              href="/profile"
+              onClick={() => setIsOpen(false)}
+              className="w-full flex items-center space-x-3 px-4 py-3 text-sm font-bold text-foreground hover:bg-accent rounded-xl transition-colors"
+            >
+              <User size={18} />
+              <span>Meu Perfil</span>
+            </Link>
+            
             <button 
-              onClick={() => signOut()}
+              onClick={() => {
+                setIsOpen(false);
+                signOut();
+              }}
               className="w-full flex items-center space-x-3 px-4 py-3 text-sm font-bold text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
             >
               <LogOut size={18} />
