@@ -33,77 +33,84 @@ export default async function DashboardPage() {
     throw new Error("Service unavailable. Please try again later.");
   }
 
-  // Fetch latest weights
-  const latestWeights = await db.select()
-    .from(weightMeasurements)
-    .where(eq(weightMeasurements.userId, user.id))
-    .orderBy(desc(weightMeasurements.date))
-    .limit(2);
-
-  // Fetch today's activities
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
 
-  const todaysWorkouts = await db.select({
-    id: workouts.id,
-    duration: workouts.duration,
-    calories: workouts.calories,
-    startedAt: workouts.startedAt,
-    activityName: activities.name,
-    activitySlug: activities.slug,
-    activityColor: activities.color,
-    activityIcon: activities.icon,
-  })
-    .from(workouts)
-    .innerJoin(activities, eq(workouts.activityId, activities.id))
-    .where(
-      and(
-        eq(workouts.userId, user.id),
-        gte(workouts.startedAt, todayStart),
-        lte(workouts.startedAt, todayEnd)
-      )
-    )
-    .orderBy(desc(workouts.startedAt));
+  // Fetch all data in parallel
+  const [
+    latestWeights,
+    todaysWorkouts,
+    todaysWaterLogs,
+    todaysStepsLogs,
+    todaysFoodLogs
+  ] = await Promise.all([
+    // Fetch latest weights
+    db.select()
+      .from(weightMeasurements)
+      .where(eq(weightMeasurements.userId, user.id))
+      .orderBy(desc(weightMeasurements.date))
+      .limit(2),
 
-  // Fetch today's water
-  const todaysWaterLogs = await db.select()
-    .from(waterLogs)
-    .where(
+    // Fetch today's activities
+    db.select({
+      id: workouts.id,
+      duration: workouts.duration,
+      calories: workouts.calories,
+      startedAt: workouts.startedAt,
+      activityName: activities.name,
+      activitySlug: activities.slug,
+      activityColor: activities.color,
+      activityIcon: activities.icon,
+    })
+      .from(workouts)
+      .innerJoin(activities, eq(workouts.activityId, activities.id))
+      .where(
         and(
-            eq(waterLogs.userId, user.id),
-            gte(waterLogs.date, todayStart),
-            lte(waterLogs.date, todayEnd)
+          eq(workouts.userId, user.id),
+          gte(workouts.startedAt, todayStart),
+          lte(workouts.startedAt, todayEnd)
         )
-    );
+      )
+      .orderBy(desc(workouts.startedAt)),
+
+    // Fetch today's water
+    db.select()
+      .from(waterLogs)
+      .where(
+          and(
+              eq(waterLogs.userId, user.id),
+              gte(waterLogs.date, todayStart),
+              lte(waterLogs.date, todayEnd)
+          )
+      ),
+
+    // Fetch today's steps
+    db.select()
+      .from(stepsLogs)
+      .where(
+          and(
+              eq(stepsLogs.userId, user.id),
+              gte(stepsLogs.date, todayStart),
+              lte(stepsLogs.date, todayEnd)
+          )
+      ),
+
+    // Fetch today's food
+    db.select()
+      .from(foodLogs)
+      .where(
+          and(
+              eq(foodLogs.userId, user.id),
+              gte(foodLogs.date, todayStart),
+              lte(foodLogs.date, todayEnd)
+          )
+      )
+  ]);
   
   const totalWater = todaysWaterLogs.reduce((acc, log) => acc + log.amount, 0);
-
-  // Fetch today's steps
-  const todaysStepsLogs = await db.select()
-    .from(stepsLogs)
-    .where(
-        and(
-            eq(stepsLogs.userId, user.id),
-            gte(stepsLogs.date, todayStart),
-            lte(stepsLogs.date, todayEnd)
-        )
-    );
-  
   const totalSteps = todaysStepsLogs.reduce((acc, log) => acc + log.count, 0);
-
-  // Fetch today's food
-  const todaysFoodLogs = await db.select()
-    .from(foodLogs)
-    .where(
-        and(
-            eq(foodLogs.userId, user.id),
-            gte(foodLogs.date, todayStart),
-            lte(foodLogs.date, todayEnd)
-        )
-    );
-  
   const totalCalories = todaysFoodLogs.reduce((acc, log) => acc + log.totalCalories, 0);
 
   const latestWeight = latestWeights.length > 0 ? latestWeights[0].weight : null;

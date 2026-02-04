@@ -1,6 +1,5 @@
 import React from 'react';
-import { db } from '@/lib/db';
-import { activities } from '@/lib/db/schema';
+import { getCachedActivities } from '@/lib/api/activities';
 import LogActivityForm from '@/components/LogActivityForm';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
@@ -13,7 +12,7 @@ export default async function LogActivityPage() {
     redirect('/');
   }
 
-  const allActivities = await db.select().from(activities).orderBy(activities.name);
+  const allActivities = await getCachedActivities();
 
   return <LogActivityForm activities={allActivities} />;
 }
