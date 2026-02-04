@@ -13,7 +13,24 @@ import { redirect } from 'next/navigation';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+  
+  if (!supabase) {
+    console.error("Supabase client not initialized. Check environment variables.");
+    return redirect("/");
+  }
+
   const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return redirect("/");
+  }
+
+  // Check if database is initialized
+  if (!db || typeof db.select !== 'function') {
+    console.error("Database not initialized. Check DATABASE_URL.");
+    // In a real app, you might want to show a dedicated error page
+    throw new Error("Service unavailable. Please try again later.");
+  }
 
   // Fetch latest weights
   const latestWeights = await db.select()

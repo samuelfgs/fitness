@@ -7,9 +7,20 @@ import { UserAvatar } from '@/components/UserAvatar';
 import { createClient } from '@/lib/supabase/server';
 import StatsCharts from '@/components/StatsCharts';
 
+import { redirect } from 'next/navigation';
+
 export default async function StatsPage() {
   const supabase = await createClient();
+  
+  if (!supabase) {
+    return redirect("/");
+  }
+
   const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return redirect("/");
+  }
 
   const userAvatar = user?.user_metadata?.avatar_url || "https://picsum.photos/100/100";
 

@@ -6,12 +6,23 @@ import { waterLogs } from '@/lib/db/schema';
 import { desc, eq, sql } from 'drizzle-orm';
 import { createClient } from '@/lib/supabase/server';
 
+import { redirect } from 'next/navigation';
+
 export default async function WaterPage() {
   const supabase = await createClient();
+  
+  if (!supabase) {
+    return redirect("/");
+  }
+
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return null;
+    return redirect("/");
+  }
+
+  if (!db || typeof db.select !== 'function') {
+    throw new Error("Service unavailable");
   }
 
   const logs = await db.select()

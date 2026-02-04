@@ -8,11 +8,17 @@ export async function proxy(request: NextRequest) {
   
   // Check if user is authenticated
   const supabase = await createClient()
-  if (!supabase) return response
+  
+  const isAuthPage = request.nextUrl.pathname === '/' || request.nextUrl.pathname.startsWith('/auth')
+
+  if (!supabase) {
+    if (!isAuthPage) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+    return response
+  }
 
   const { data: { user } } = await supabase.auth.getUser()
-
-  const isAuthPage = request.nextUrl.pathname === '/' || request.nextUrl.pathname.startsWith('/auth')
   
   if (!user && !isAuthPage) {
     // Redirect unauthenticated users to home page

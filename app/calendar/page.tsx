@@ -11,10 +11,19 @@ import { redirect } from 'next/navigation';
 
 export default async function CalendarPage() {
   const supabase = await createClient();
+  
+  if (!supabase) {
+    return redirect("/");
+  }
+
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/');
+    return redirect("/");
+  }
+
+  if (!db || typeof db.select !== 'function') {
+    throw new Error("Service unavailable");
   }
 
   const userAvatar = user?.user_metadata?.avatar_url || "https://picsum.photos/100/100";
