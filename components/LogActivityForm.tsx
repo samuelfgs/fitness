@@ -55,7 +55,7 @@ export default function LogActivityForm({ activities }: LogActivityFormProps) {
       setStep(1);
       setSelectedActivity(null);
     } else {
-      router.push('/dashboard');
+      router.push('/log');
     }
   };
 

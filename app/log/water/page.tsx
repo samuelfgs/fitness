@@ -7,7 +7,7 @@ export default function LogWaterPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <div className="px-6 py-6 border-b border-border flex items-center justify-between">
-        <Link href="/water" className="p-2 -ml-2 text-foreground bg-muted rounded-xl hover:bg-muted/80 transition-colors">
+        <Link href="/log" className="p-2 -ml-2 text-foreground bg-muted rounded-xl hover:bg-muted/80 transition-colors">
           <ArrowLeft size={24} />
         </Link>
         <h1 className="text-xl font-black text-foreground tracking-tight">Registrar Água</h1>

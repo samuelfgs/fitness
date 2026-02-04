@@ -3,11 +3,11 @@ import { Activity, WeightEntry, ActivityType } from '@/lib/types';
 import ActivityCard from '@/components/ActivityCard';
 import BottomNav from '@/components/BottomNav';
 import { UserAvatar } from '@/components/UserAvatar';
-import { TrendingUp, ArrowRight, Activity as ActivityIcon, Droplets } from 'lucide-react';
+import { TrendingUp, ArrowRight, Activity as ActivityIcon, Droplets, Footprints } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
-import { weightMeasurements, workouts, activities, waterLogs } from '@/lib/db/schema';
+import { weightMeasurements, workouts, activities, waterLogs, stepsLogs } from '@/lib/db/schema';
 import { desc, eq, and, gte, lte } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 
@@ -79,6 +79,19 @@ export default async function DashboardPage() {
   
   const totalWater = todaysWaterLogs.reduce((acc, log) => acc + log.amount, 0);
 
+  // Fetch today's steps
+  const todaysStepsLogs = await db.select()
+    .from(stepsLogs)
+    .where(
+        and(
+            eq(stepsLogs.userId, user.id),
+            gte(stepsLogs.date, todayStart),
+            lte(stepsLogs.date, todayEnd)
+        )
+    );
+  
+  const totalSteps = todaysStepsLogs.reduce((acc, log) => acc + log.count, 0);
+
   const latestWeight = latestWeights.length > 0 ? latestWeights[0].weight : null;
   const previousWeight = latestWeights.length > 1 ? latestWeights[1].weight : null;
   
@@ -144,7 +157,7 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          <Link href="/water" className="bg-card p-6 rounded-[2rem] shadow-sm border border-border active:scale-95 transition-all col-span-2 sm:col-span-1">
+          <Link href="/water" className="bg-card p-6 rounded-[2rem] shadow-sm border border-border active:scale-95 transition-all">
             <div className="flex items-center space-x-2 mb-3 text-muted-foreground">
               <Droplets size={18} className="text-blue-500" />
               <span className="text-[10px] font-black uppercase tracking-widest">Água</span>
@@ -157,6 +170,19 @@ export default async function DashboardPage() {
               Total de hoje
             </div>
           </Link>
+
+          <div className="bg-card p-6 rounded-[2rem] shadow-sm border border-border">
+            <div className="flex items-center space-x-2 mb-3 text-muted-foreground">
+              <Footprints size={18} className="text-purple-500" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Passos</span>
+            </div>
+            <div className="flex items-end space-x-1">
+              <span className="text-4xl font-black text-foreground leading-none">{totalSteps}</span>
+            </div>
+            <div className="text-xs font-bold mt-2 text-muted-foreground">
+              Meta: 10k
+            </div>
+          </div>
         </div>
 
         {/* Today's Log */}
@@ -172,10 +198,10 @@ export default async function DashboardPage() {
             <div className="text-center py-12 bg-card rounded-[2rem] border-2 border-dashed border-border">
               <p className="text-muted-foreground font-bold mb-4">Nenhuma atividade registrada hoje.</p>
               <Link 
-                href="/log/activity"
+                href="/log"
                 className="text-primary font-black text-sm bg-primary/10 px-6 py-3 rounded-2xl inline-block active:scale-95 transition-all hover:bg-primary/20"
               >
-                + Registrar Treino
+                + Registrar Atividade
               </Link>
             </div>
           ) : (

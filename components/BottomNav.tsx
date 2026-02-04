@@ -12,7 +12,7 @@ const BottomNav: React.FC = () => {
     { id: 'dashboard', icon: LayoutDashboard, label: 'Início', href: '/dashboard' },
     { id: 'calendar', icon: Calendar, label: 'Calendário', href: '/calendar' },
     { id: 'stats', icon: BarChart2, label: 'Stats', href: '/stats' },
-    { id: 'log', icon: PlusCircle, label: 'Registrar', isAction: true, href: '/log/activity' },
+    { id: 'log', icon: PlusCircle, label: 'Registrar', isAction: true, href: '/log' },
   ];
 
   return (

@@ -50,6 +50,13 @@
       "when": 1770180593707,
       "tag": "0006_medical_satana",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1770231882650,
+      "tag": "0007_ordinary_hydra",
+      "breakpoints": true
     }
   ]
 }
