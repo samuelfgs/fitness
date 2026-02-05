@@ -474,15 +474,14 @@ export async function getWeeklyFoodStats() {
   
   // Calculate week balance
   // Rule: Past days (excluding today) with 0 consumption are treated as hitting the goal (0 balance)
-  const todayStr = todayEnd.toLocaleDateString('en-CA', { timeZone: timezone });
+  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: timezone });
   
   const weekBalance = dailyStats.reduce((acc, s) => {
-    // If it's a future day, don't count it in the balance
-    if (s.date > todayStr) {
+    // If it's today or a future day, don't count it in the balance
+    if (s.date >= todayStr) {
       return acc;
     }
     // If consumption is 0, we assume the user stayed on track (0 balance)
-    // This applies to both past days and today if nothing is logged yet.
     if (s.consumed === 0) {
       return acc;
     }
