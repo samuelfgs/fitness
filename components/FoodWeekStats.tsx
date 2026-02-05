@@ -80,7 +80,7 @@ export default function FoodWeekStats({ stats }: FoodWeekStatsProps) {
                 dataKey="dayName" 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{fontSize: 10, fill: '#a1a1aa', fontWeight: '900', textTransform: 'uppercase'}} 
+                tick={{fontSize: 10, fill: '#a1a1aa', fontWeight: '900'}} 
               />
               <YAxis 
                 axisLine={false} 

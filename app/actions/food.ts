@@ -452,7 +452,7 @@ export async function getWeeklyFoodStats() {
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday.getTime() + i * 24 * 60 * 60 * 1000);
     const dateStr = d.toLocaleDateString('en-CA', { timeZone: timezone }); // YYYY-MM-DD
-    const dayName = d.toLocaleDateString('pt-BR', { weekday: 'short', timeZone: timezone }).replace('.', '');
+    const dayName = d.toLocaleDateString('pt-BR', { weekday: 'short', timeZone: timezone }).replace('.', '').toUpperCase();
     
     dailyStatsMap.set(dateStr, {
       date: dateStr,
