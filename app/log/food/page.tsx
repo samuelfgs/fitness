@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
-import { ArrowLeft, Utensils, Sparkles, Loader2, Check, X, MessageSquare } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Utensils, Sparkles, Loader2, Check, X, MessageSquare, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { parseFood, saveFood } from "@/app/actions/food";
+import { parseFood, saveFood, getRegisteredFoods, deleteRegisteredFood } from "@/app/actions/food";
 import { Button } from "@/components/ui/Button";
+import { RegisterFoodForm } from "@/components/RegisterFoodForm";
 
 interface FoodItem {
   name: string;
@@ -32,8 +33,10 @@ export default function LogFoodPage() {
   const [previewData, setPreviewData] = useState<{ meals: Meal[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [followUp, setFollowUp] = useState('');
+  const [showRegisterForm, setShowRegisterForm] = useState(false);
+  const [registeredFoods, setRegisteredFoods] = useState<any[]>([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const pending = sessionStorage.getItem('pending_meals');
     if (pending) {
       try {
@@ -46,6 +49,31 @@ export default function LogFoodPage() {
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (showRegisterForm) {
+      loadRegisteredFoods();
+    }
+  }, [showRegisterForm]);
+
+  async function loadRegisteredFoods() {
+    try {
+      const foods = await getRegisteredFoods();
+      setRegisteredFoods(foods);
+    } catch (err) {
+      console.error('Failed to load registered foods', err);
+    }
+  }
+
+  async function handleDeleteRegistered(id: string) {
+    if (!confirm('Tem certeza que deseja excluir este alimento registrado?')) return;
+    try {
+      await deleteRegisteredFood(id);
+      loadRegisteredFoods();
+    } catch (err) {
+      alert('Erro ao excluir alimento.');
+    }
+  }
 
   async function handleAnalyze(e?: React.FormEvent) {
     if (e) e.preventDefault();
@@ -120,7 +148,43 @@ export default function LogFoodPage() {
       </div>
 
       <div className="flex-1 px-6">
-        {!previewData ? (
+        {showRegisterForm ? (
+          <div className="space-y-6">
+            <RegisterFoodForm 
+              onSuccess={() => {
+                setShowRegisterForm(false);
+                // Optional: show a success toast
+              }}
+              onCancel={() => setShowRegisterForm(false)}
+            />
+
+            <div className="bg-card border border-border rounded-[2.5rem] p-8 space-y-6 shadow-sm">
+              <h3 className="text-xl font-black text-foreground tracking-tight px-1">Seus Alimentos</h3>
+              <div className="space-y-3">
+                {registeredFoods.length === 0 ? (
+                  <p className="text-muted-foreground text-sm px-1 font-medium italic">Nenhum alimento cadastrado ainda.</p>
+                ) : (
+                  registeredFoods.map((food) => (
+                    <div key={food.id} className="bg-muted/50 rounded-2xl p-4 flex items-center justify-between group">
+                      <div className="space-y-1">
+                        <div className="font-bold text-foreground">{food.name}</div>
+                        <div className="text-[10px] text-muted-foreground font-black uppercase tracking-wider">
+                          {food.servingSize} • {food.calories} kcal • P:{food.protein}g C:{food.carbs}g G:{food.fat}g
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => handleDeleteRegistered(food.id)}
+                        className="p-2 text-muted-foreground hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        ) : !previewData ? (
           <div className="bg-card border border-border rounded-[2.5rem] p-8 space-y-6 shadow-sm">
             <div className="bg-red-500/10 w-16 h-16 rounded-2xl flex items-center justify-center text-red-500 mb-2">
               <Utensils size={32} strokeWidth={2.5} />
@@ -168,16 +232,27 @@ export default function LogFoodPage() {
                   )}
                 </Button>
 
-                <Link href="/log/food/recent" className="w-full">
+                <div className="grid grid-cols-2 gap-3">
+                  <Link href="/log/food/recent" className="w-full">
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      className="w-full border-2 border-muted hover:bg-muted font-black py-8 rounded-3xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                    >
+                      <Utensils size={20} />
+                      REPETIR
+                    </Button>
+                  </Link>
                   <Button 
                     type="button"
                     variant="outline"
+                    onClick={() => setShowRegisterForm(true)}
                     className="w-full border-2 border-muted hover:bg-muted font-black py-8 rounded-3xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                   >
-                    <Utensils size={20} />
-                    REPETIR REFEIÇÃO
+                    <Plus size={20} />
+                    CADASTRAR
                   </Button>
-                </Link>
+                </div>
               </div>
             </form>
           </div>

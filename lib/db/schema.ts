@@ -122,6 +122,25 @@ export const foodLogs = pgTable(
   })
 );
 
+export const registeredFoods = pgTable(
+  "registered_foods",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").notNull(),
+    name: varchar("name", { length: 255 }).notNull(),
+    servingSize: varchar("serving_size", { length: 255 }), // e.g., "100g", "1 cup"
+    calories: integer("calories").notNull(),
+    protein: integer("protein"),
+    carbs: integer("carbs"),
+    fat: integer("fat"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    userIdIdx: index("idx_registered_foods_user_id").on(table.userId),
+  })
+);
+
 export const profiles = pgTable(
   "profiles",
   {
@@ -148,5 +167,7 @@ export type StepsLog = typeof stepsLogs.$inferSelect;
 export type NewStepsLog = typeof stepsLogs.$inferInsert;
 export type FoodLog = typeof foodLogs.$inferSelect;
 export type NewFoodLog = typeof foodLogs.$inferInsert;
+export type RegisteredFood = typeof registeredFoods.$inferSelect;
+export type NewRegisteredFood = typeof registeredFoods.$inferInsert;
 export type Profile = typeof profiles.$inferSelect;
 export type NewProfile = typeof profiles.$inferInsert;

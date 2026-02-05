@@ -71,6 +71,13 @@
       "when": 1770237518514,
       "tag": "0009_nice_annihilus",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1770294503444,
+      "tag": "0010_outstanding_toad_men",
+      "breakpoints": true
     }
   ]
 }

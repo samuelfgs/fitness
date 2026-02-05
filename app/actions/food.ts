@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from "@/lib/db";
-import { foodLogs } from "@/lib/db/schema";
+import { foodLogs, registeredFoods } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -28,6 +28,20 @@ export async function parseFood(rawText: string, history: { role: string, conten
     throw new Error("Gemini API key is not configured");
   }
 
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let registeredFoodsData = [];
+  if (user) {
+    registeredFoodsData = await db.select()
+      .from(registeredFoods)
+      .where(eq(registeredFoods.userId, user.id));
+  }
+
+  const referenceData = registeredFoodsData.map(f => 
+    `- ${f.name}: Serving ${f.servingSize}, Kcal ${f.calories}, Carbs ${f.carbs}, Protein ${f.protein}, Fat ${f.fat}`
+  ).join('\n');
+
   const prompt = `
     Analyze the following food consumption text and extract the meals, items, calories, and macros (protein, carbs, fat).
     Text: "${rawText}"
@@ -35,8 +49,8 @@ export async function parseFood(rawText: string, history: { role: string, conten
     Current History of this conversation:
     ${history.map(h => `${h.role}: ${h.content}`).join('\n')}
 
-    Reference Data (Use these values if the food matches, prioritizing these over general estimates):
-    - Leite Camponesa: Porcao 200ml, Kcal 96, Carbs 9.2, Proteinas 14, Gorduras 0
+    Reference Data (Use these values if the food matches EXACTLY or CLOSELY, prioritizing these over general estimates):
+    ${referenceData || "No registered foods found."}
 
     Rules for data normalization:
     1. Prettify and Normalize: Convert all names to "Title Case" (e.g., "lanche da tarde" -> "Lanche da Tarde").
@@ -61,7 +75,7 @@ export async function parseFood(rawText: string, history: { role: string, conten
     
     The output must be ONLY the JSON object, no markdown, no explanation.
     Separate by meal if multiple are mentioned.
-    Estimate calories and macros for each item based on typical values for the given portion.
+    Estimate calories and macros for each item based on typical values for the given portion, unless a matching reference is found.
     Ensure totalCalories/Protein/Carbs/Fat for the meal is the sum of its items.
   `;
 
@@ -301,4 +315,64 @@ export async function getRecentMeals(limit: number = 20) {
   }
 
   return uniqueMeals;
+}
+
+export async function registerFood(formData: { 
+  name: string; 
+  servingSize: string; 
+  calories: number; 
+  protein?: number; 
+  carbs?: number; 
+  fat?: number; 
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Unauthorized");
+
+  try {
+    await db.insert(registeredFoods).values({
+      userId: user.id,
+      name: formData.name,
+      servingSize: formData.servingSize,
+      calories: Math.round(formData.calories),
+      protein: formData.protein ? Math.round(formData.protein) : 0,
+      carbs: formData.carbs ? Math.round(formData.carbs) : 0,
+      fat: formData.fat ? Math.round(formData.fat) : 0,
+    });
+
+    revalidatePath("/log/food");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in registerFood:", error);
+    throw new Error("Erro ao registrar alimento.");
+  }
+}
+
+export async function getRegisteredFoods() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Unauthorized");
+
+  return await db.select()
+    .from(registeredFoods)
+    .where(eq(registeredFoods.userId, user.id))
+    .orderBy(desc(registeredFoods.createdAt));
+}
+
+export async function deleteRegisteredFood(id: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Unauthorized");
+
+  try {
+    await db.delete(registeredFoods).where(and(eq(registeredFoods.id, id), eq(registeredFoods.userId, user.id)));
+    revalidatePath("/log/food");
+    return { success: true };
+  } catch (error) {
+    console.error("Error in deleteRegisteredFood:", error);
+    throw new Error("Erro ao excluir alimento registrado.");
+  }
 }
