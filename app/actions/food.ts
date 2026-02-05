@@ -318,6 +318,7 @@ export async function getRecentMeals(limit: number = 20) {
 }
 
 export async function registerFood(formData: { 
+  id?: string;
   name: string; 
   servingSize: string; 
   calories: number; 
@@ -331,15 +332,29 @@ export async function registerFood(formData: {
   if (!user) throw new Error("Unauthorized");
 
   try {
-    await db.insert(registeredFoods).values({
-      userId: user.id,
-      name: formData.name,
-      servingSize: formData.servingSize,
-      calories: Math.round(formData.calories),
-      protein: formData.protein ? Math.round(formData.protein) : 0,
-      carbs: formData.carbs ? Math.round(formData.carbs) : 0,
-      fat: formData.fat ? Math.round(formData.fat) : 0,
-    });
+    if (formData.id) {
+      await db.update(registeredFoods)
+        .set({
+          name: formData.name,
+          servingSize: formData.servingSize,
+          calories: Math.round(formData.calories),
+          protein: formData.protein ? Math.round(formData.protein) : 0,
+          carbs: formData.carbs ? Math.round(formData.carbs) : 0,
+          fat: formData.fat ? Math.round(formData.fat) : 0,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(registeredFoods.id, formData.id), eq(registeredFoods.userId, user.id)));
+    } else {
+      await db.insert(registeredFoods).values({
+        userId: user.id,
+        name: formData.name,
+        servingSize: formData.servingSize,
+        calories: Math.round(formData.calories),
+        protein: formData.protein ? Math.round(formData.protein) : 0,
+        carbs: formData.carbs ? Math.round(formData.carbs) : 0,
+        fat: formData.fat ? Math.round(formData.fat) : 0,
+      });
+    }
 
     revalidatePath("/log/food");
     return { success: true };

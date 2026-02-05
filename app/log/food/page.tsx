@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Utensils, Sparkles, Loader2, Check, X, MessageSquare, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Utensils, Sparkles, Loader2, Check, X, MessageSquare, Plus, Trash2, Edit2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { parseFood, saveFood, getRegisteredFoods, deleteRegisteredFood } from "@/app/actions/food";
@@ -35,6 +35,7 @@ export default function LogFoodPage() {
   const [followUp, setFollowUp] = useState('');
   const [showRegisterForm, setShowRegisterForm] = useState(false);
   const [registeredFoods, setRegisteredFoods] = useState<any[]>([]);
+  const [editingFood, setEditingFood] = useState<any>(null);
 
   useEffect(() => {
     const pending = sessionStorage.getItem('pending_meals');
@@ -73,6 +74,12 @@ export default function LogFoodPage() {
     } catch (err) {
       alert('Erro ao excluir alimento.');
     }
+  }
+
+  function handleEditFood(food: any) {
+    setEditingFood(food);
+    // Ensure we scroll to the form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async function handleAnalyze(e?: React.FormEvent) {
@@ -151,11 +158,16 @@ export default function LogFoodPage() {
         {showRegisterForm ? (
           <div className="space-y-6">
             <RegisterFoodForm 
+              initialData={editingFood}
               onSuccess={() => {
-                setShowRegisterForm(false);
-                // Optional: show a success toast
+                if (!editingFood) setShowRegisterForm(false);
+                setEditingFood(null);
+                loadRegisteredFoods();
               }}
-              onCancel={() => setShowRegisterForm(false)}
+              onCancel={() => {
+                setShowRegisterForm(false);
+                setEditingFood(null);
+              }}
             />
 
             <div className="bg-card border border-border rounded-[2.5rem] p-8 space-y-6 shadow-sm">
@@ -172,12 +184,20 @@ export default function LogFoodPage() {
                           {food.servingSize} • {food.calories} kcal • P:{food.protein}g C:{food.carbs}g G:{food.fat}g
                         </div>
                       </div>
-                      <button 
-                        onClick={() => handleDeleteRegistered(food.id)}
-                        className="p-2 text-muted-foreground hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => handleEditFood(food)}
+                          className="p-2 text-muted-foreground hover:text-blue-500 transition-colors"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteRegistered(food.id)}
+                          className="p-2 text-muted-foreground hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </div>
                   ))
                 )}

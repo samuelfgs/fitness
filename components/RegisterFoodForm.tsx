@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Loader2, Save, Plus } from 'lucide-react';
 import { registerFood } from "@/app/actions/food";
 import { Button } from "@/components/ui/Button";
@@ -8,9 +8,18 @@ import { Button } from "@/components/ui/Button";
 interface RegisterFoodFormProps {
   onSuccess: () => void;
   onCancel: () => void;
+  initialData?: {
+    id: string;
+    name: string;
+    servingSize: string | null;
+    calories: number;
+    protein: number | null;
+    carbs: number | null;
+    fat: number | null;
+  };
 }
 
-export function RegisterFoodForm({ onSuccess, onCancel }: RegisterFoodFormProps) {
+export function RegisterFoodForm({ onSuccess, onCancel, initialData }: RegisterFoodFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -22,6 +31,19 @@ export function RegisterFoodForm({ onSuccess, onCancel }: RegisterFoodFormProps)
     fat: ''
   });
 
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name,
+        servingSize: initialData.servingSize || '',
+        calories: String(initialData.calories),
+        protein: String(initialData.protein || ''),
+        carbs: String(initialData.carbs || ''),
+        fat: String(initialData.fat || '')
+      });
+    }
+  }, [initialData]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -29,13 +51,14 @@ export function RegisterFoodForm({ onSuccess, onCancel }: RegisterFoodFormProps)
 
     try {
       await registerFood({
+        id: initialData?.id,
         name: formData.name,
         servingSize: formData.servingSize,
         calories: Number(formData.calories),
         protein: formData.protein ? Number(formData.protein) : 0,
         carbs: formData.carbs ? Number(formData.carbs) : 0,
         fat: formData.fat ? Number(formData.fat) : 0,
-      });
+      } as any); // Using as any because I'll update registerFood to accept ID
       onSuccess();
     } catch (err: any) {
       setError(err.message || 'Erro ao registrar alimento.');
@@ -64,9 +87,13 @@ export function RegisterFoodForm({ onSuccess, onCancel }: RegisterFoodFormProps)
       </div>
       
       <div className="space-y-2">
-        <h2 className="text-2xl font-black text-foreground tracking-tight">Novo Alimento</h2>
+        <h2 className="text-2xl font-black text-foreground tracking-tight">
+          {initialData ? 'Editar Alimento' : 'Novo Alimento'}
+        </h2>
         <p className="text-muted-foreground font-medium text-sm leading-relaxed">
-          Cadastre as informações nutricionais para a IA usar como referência.
+          {initialData 
+            ? 'Atualize as informações nutricionais deste alimento.' 
+            : 'Cadastre as informações nutricionais para a IA usar como referência.'}
         </p>
       </div>
 
