@@ -25,23 +25,25 @@ export default function WeightEvolutionChart({ weights }: WeightEvolutionChartPr
     );
   }
 
-  // Calculate min and max for Y axis to make the chart look better
+  // Calculate min and max for Y axis based on user preference:
+  // +/- 20 from min/max and rounded to nearest dec unit
   const weightValues = chartData.map(d => d.weight);
   const minWeight = Math.min(...weightValues);
   const maxWeight = Math.max(...weightValues);
   
-  // Ensure we have a reasonable range even if weights are close together
-  // A 4kg minimum range (2kg above/below) makes 100g changes look proportional
-  const range = maxWeight - minWeight;
-  const preferredRange = Math.max(range * 2, 4); 
-  const midPoint = (maxWeight + minWeight) / 2;
-  const domainMin = Math.floor(midPoint - preferredRange / 2);
-  const domainMax = Math.ceil(midPoint + preferredRange / 2);
+  const domainMin = Math.floor((minWeight - 20) / 10) * 10;
+  const domainMax = Math.ceil((maxWeight + 10) / 10) * 10;
 
   return (
-    <div className="h-64 bg-card rounded-[2rem] border border-border mb-8 shadow-sm p-4 overflow-hidden">
+    <div className="h-64 bg-card rounded-[2rem] border border-border mb-8 shadow-sm p-4 overflow-hidden outline-none focus:outline-none [&_*]:outline-none">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
+        <AreaChart 
+          data={chartData} 
+          margin={{ top: 10, right: 20, left: 0, bottom: 20 }}
+          accessibilityLayer={false}
+          style={{ outline: 'none' }}
+          tabIndex={-1}
+        >
           <defs>
             <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#22c55e" stopOpacity={0.2}/>

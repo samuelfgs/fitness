@@ -105,6 +105,12 @@ body {
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
+/* Recharts Focus Reset */
+.recharts-surface:focus,
+.recharts-wrapper:focus {
+  outline: none !important;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

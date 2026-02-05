@@ -55,10 +55,6 @@ export default function FoodWeekStats({ stats }: FoodWeekStatsProps) {
 
   return (
     <div className="space-y-6">
-      <style dangerouslySetInnerHTML={{ __html: `
-        .recharts-surface:focus { outline: none !important; }
-        .recharts-wrapper:focus { outline: none !important; }
-      `}} />
       <h2 className="text-lg font-black text-foreground px-2">Estatísticas da Semana</h2>
       
       <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm">

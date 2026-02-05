@@ -41,10 +41,15 @@ export default function StatsCharts({ activities, weights }: StatsChartsProps) {
       {/* Weight Chart */}
       <div className="bg-card p-6 rounded-[2rem] shadow-sm border border-border">
         <h3 className="font-black text-foreground mb-6 uppercase tracking-widest text-xs">Tendência de Peso</h3>
-        <div className="h-64 w-full">
+        <div className="h-64 w-full outline-none focus:outline-none [&_*]:outline-none">
           {weightData.length > 1 ? (
              <ResponsiveContainer width="100%" height="100%">
-             <AreaChart data={weightData}>
+             <AreaChart 
+               data={weightData}
+               accessibilityLayer={false}
+               style={{ outline: 'none' }}
+               tabIndex={-1}
+             >
                <defs>
                  <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.2}/>
@@ -72,9 +77,14 @@ export default function StatsCharts({ activities, weights }: StatsChartsProps) {
       {/* Activity Chart */}
       <div className="bg-card p-6 rounded-[2rem] shadow-sm border border-border">
         <h3 className="font-black text-foreground mb-6 uppercase tracking-widest text-xs">Atividade (Últimos 7 Dias)</h3>
-        <div className="h-64 w-full">
+        <div className="h-64 w-full outline-none focus:outline-none [&_*]:outline-none">
            <ResponsiveContainer width="100%" height="100%">
-             <BarChart data={last7Days}>
+             <BarChart 
+               data={last7Days}
+               accessibilityLayer={false}
+               style={{ outline: 'none' }}
+               tabIndex={-1}
+             >
                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#a1a1aa', fontWeight: 'bold'}} />
                <Tooltip 
                  cursor={{fill: '#27272a'}}
