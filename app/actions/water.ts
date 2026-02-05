@@ -16,14 +16,22 @@ export async function logWater(formData: FormData) {
   }
 
   const amountRaw = formData.get("amount");
+  const dateRaw = formData.get("date");
+  const timeRaw = formData.get("time");
+
   if (!amountRaw) return;
 
   const amount = parseInt(amountRaw as string);
+  
+  let logDate = new Date();
+  if (dateRaw && timeRaw) {
+    logDate = new Date(`${dateRaw}T${timeRaw}`);
+  }
 
   await db.insert(waterLogs).values({
     userId: user.id,
     amount: amount,
-    date: new Date(),
+    date: logDate,
   });
 
   revalidatePath("/dashboard");

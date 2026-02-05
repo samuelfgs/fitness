@@ -1,10 +1,33 @@
 import React from 'react';
-import { ArrowLeft, Check, GlassWater } from 'lucide-react';
+import { ArrowLeft, Check, GlassWater, Calendar, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { logWater } from '@/app/actions/water';
 import { SubmitButton } from '@/components/SubmitButton';
+import { cookies } from 'next/headers';
 
-export default function LogWaterPage() {
+export default async function LogWaterPage() {
+  const cookieStore = await cookies();
+  const timezone = cookieStore.get('user-timezone')?.value || 'America/Sao_Paulo';
+  
+  const now = new Date();
+  
+  // Format date and time for the user's timezone
+  const dateFormatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const timeFormatter = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  const defaultDate = dateFormatter.format(now);
+  const defaultTime = timeFormatter.format(now);
+
   return (
     <form action={logWater} className="min-h-screen flex flex-col bg-background">
       <div className="px-6 py-6 border-b border-border flex items-center justify-between">
@@ -31,6 +54,33 @@ export default function LogWaterPage() {
               required
             />
             <span className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-sm uppercase tracking-widest">ml</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
+              <Calendar size={14} className="text-primary" /> Data
+            </label>
+            <input
+              type="date"
+              name="date"
+              defaultValue={defaultDate}
+              className="w-full bg-muted/50 border-none rounded-2xl p-4 font-bold text-foreground focus:ring-2 focus:ring-primary"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
+              <Clock size={14} className="text-primary" /> Hora
+            </label>
+            <input
+              type="time"
+              name="time"
+              defaultValue={defaultTime}
+              className="w-full bg-muted/50 border-none rounded-2xl p-4 font-bold text-foreground focus:ring-2 focus:ring-primary"
+              required
+            />
           </div>
         </div>
         

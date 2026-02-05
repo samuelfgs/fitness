@@ -7,6 +7,7 @@ import { desc, eq } from 'drizzle-orm';
 import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { getTodayRange } from '@/lib/utils';
+import { DeleteWaterLogButton } from '@/components/DeleteWaterLogButton';
 
 import { redirect } from 'next/navigation';
 
@@ -87,11 +88,12 @@ export default async function WaterPage() {
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-black text-muted-foreground uppercase tracking-widest">Hora/Data</th>
                     <th className="px-6 py-4 text-right text-xs font-black text-muted-foreground uppercase tracking-widest">Qtd.</th>
+                    <th className="px-6 py-4 text-right text-xs font-black text-muted-foreground uppercase tracking-widest w-10"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {logs.map((entry) => (
-                    <tr key={entry.id}>
+                    <tr key={entry.id} className="group">
                       <td className="px-6 py-4 text-sm font-bold text-foreground">
                         {new Date(entry.date).toLocaleDateString('pt-BR', {
                             day: '2-digit',
@@ -102,6 +104,9 @@ export default async function WaterPage() {
                       </td>
                       <td className="px-6 py-4 text-sm font-black text-foreground text-right">
                         {entry.amount} ml
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <DeleteWaterLogButton id={entry.id} />
                       </td>
                     </tr>
                   ))}
