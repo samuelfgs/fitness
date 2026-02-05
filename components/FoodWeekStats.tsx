@@ -55,6 +55,10 @@ export default function FoodWeekStats({ stats }: FoodWeekStatsProps) {
 
   return (
     <div className="space-y-6">
+      <style dangerouslySetInnerHTML={{ __html: `
+        .recharts-surface:focus { outline: none !important; }
+        .recharts-wrapper:focus { outline: none !important; }
+      `}} />
       <h2 className="text-lg font-black text-foreground px-2">Estatísticas da Semana</h2>
       
       <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm">
@@ -73,9 +77,16 @@ export default function FoodWeekStats({ stats }: FoodWeekStatsProps) {
           </div>
         </div>
 
-        <div className="h-64 w-full mt-4">
+        <div className="h-64 w-full mt-4 outline-none focus:outline-none [&_*]:outline-none">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={dailyStats} margin={{ top: 0, right: 0, left: -20, bottom: 0 }} barGap={-24}>
+            <BarChart 
+              data={dailyStats} 
+              margin={{ top: 0, right: 0, left: -20, bottom: 0 }} 
+              barGap={-24}
+              accessibilityLayer={false}
+              style={{ outline: 'none' }}
+              tabIndex={-1}
+            >
               <XAxis 
                 dataKey="dayName" 
                 axisLine={false} 
@@ -89,7 +100,7 @@ export default function FoodWeekStats({ stats }: FoodWeekStatsProps) {
               />
               <Tooltip 
                 content={<CustomTooltip />}
-                cursor={{fill: 'rgba(0,0,0,0.05)'}}
+                cursor={false}
               />
               {/* Background bar for Goal */}
               <Bar 
@@ -98,6 +109,8 @@ export default function FoodWeekStats({ stats }: FoodWeekStatsProps) {
                 radius={[8, 8, 0, 0]} 
                 barSize={24}
                 isAnimationActive={false}
+                activeBar={false}
+                stroke="none"
               />
               {/* Foreground bar for Consumed */}
               <Bar 
@@ -113,6 +126,8 @@ export default function FoodWeekStats({ stats }: FoodWeekStatsProps) {
                 radius={[8, 8, 0, 0]} 
                 barSize={24}
                 name="consumed"
+                activeBar={false}
+                stroke="none"
               >
                 {dailyStats.map((entry, index) => {
                   const today = new Date().toLocaleDateString('en-CA');
@@ -124,6 +139,7 @@ export default function FoodWeekStats({ stats }: FoodWeekStatsProps) {
                       key={`cell-${index}`} 
                       fill={isFallback ? "#a1a1aa" : (isOverGoal ? "#ef4444" : "#22c55e")} 
                       fillOpacity={isFallback ? 0.3 : (isOverGoal ? 1 : 0.8)}
+                      stroke="none"
                     />
                   );
                 })}
