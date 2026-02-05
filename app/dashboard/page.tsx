@@ -10,9 +10,13 @@ import { db } from '@/lib/db';
 import { weightMeasurements, workouts, activities, waterLogs, stepsLogs, foodLogs, profiles } from '@/lib/db/schema';
 import { desc, eq, and, gte, lte } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { getTodayRange } from '@/lib/utils';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+  const cookieStore = await cookies();
+  const timezone = cookieStore.get('user-timezone')?.value || 'America/Sao_Paulo';
   
   if (!supabase) {
     console.error("Supabase client not initialized. Check environment variables.");
@@ -32,10 +36,7 @@ export default async function DashboardPage() {
     throw new Error("Service unavailable. Please try again later.");
   }
 
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const todayEnd = new Date();
-  todayEnd.setHours(23, 59, 59, 999);
+  const { start: todayStart, end: todayEnd } = getTodayRange(timezone);
 
   // Fetch all data in parallel
   const [

@@ -3,13 +3,17 @@ import { ArrowLeft, Plus, Droplets } from 'lucide-react';
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import { waterLogs } from '@/lib/db/schema';
-import { desc, eq, sql } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { createClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers';
+import { getTodayRange } from '@/lib/utils';
 
 import { redirect } from 'next/navigation';
 
 export default async function WaterPage() {
   const supabase = await createClient();
+  const cookieStore = await cookies();
+  const timezone = cookieStore.get('user-timezone')?.value || 'America/Sao_Paulo';
   
   if (!supabase) {
     return redirect("/");
@@ -30,10 +34,13 @@ export default async function WaterPage() {
     .where(eq(waterLogs.userId, user.id))
     .orderBy(desc(waterLogs.date));
 
-  // Calculate today's total
-  const today = new Date().toDateString();
+  // Calculate today's total using timezone-aware range
+  const { start, end } = getTodayRange(timezone);
   const todayTotal = logs
-    .filter(log => new Date(log.date).toDateString() === today)
+    .filter(log => {
+      const logDate = new Date(log.date);
+      return logDate >= start && logDate <= end;
+    })
     .reduce((acc, log) => acc + log.amount, 0);
 
   return (

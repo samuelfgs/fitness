@@ -29,6 +29,16 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                document.cookie = 'user-timezone=' + tz + '; path=/; max-age=31536000; SameSite=Lax';
+              })();
+            `,
+          }}
+        />
         <Suspense fallback={
           <div className="flex items-center justify-center min-h-screen">
             <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />

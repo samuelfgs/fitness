@@ -15,6 +15,23 @@ interface FoodItem {
   protein: number;
   carbs: number;
   fat: number;
+  // Internal base values for ratio calculations
+  baseQuantity?: number | null;
+  baseCalories?: number;
+  baseProtein?: number;
+  baseCarbs?: number;
+  baseFat?: number;
+  unit?: string;
+  currentAmount?: number | null;
+}
+
+function parseQuantity(str: string) {
+  const numMatch = str.match(/(\d+(?:\.\d+)?)/);
+  if (!numMatch) return { amount: null, unit: str };
+  
+  const amount = parseFloat(numMatch[0]);
+  const unit = str.replace(numMatch[0], '').trim();
+  return { amount, unit };
 }
 
 export default function RecentFoodItemsPage() {
@@ -44,7 +61,41 @@ export default function RecentFoodItemsPage() {
     if (isSelected) {
       setSelectedItems(selectedItems.filter(i => !(i.name === item.name && i.quantity === item.quantity)));
     } else {
-      setSelectedItems([...selectedItems, item]);
+      const { amount, unit } = parseQuantity(item.quantity);
+      setSelectedItems([...selectedItems, {
+        ...item,
+        baseQuantity: amount,
+        currentAmount: amount,
+        unit: unit,
+        baseCalories: item.calories,
+        baseProtein: item.protein,
+        baseCarbs: item.carbs,
+        baseFat: item.fat
+      }]);
+    }
+  };
+
+  const updateItem = (index: number, newAmount: number) => {
+    const newItems = [...selectedItems];
+    const item = newItems[index];
+    
+    if (item.baseQuantity && item.baseQuantity > 0) {
+      const ratio = newAmount / item.baseQuantity;
+      const newCalories = Math.round((item.baseCalories || 0) * ratio);
+      const newProtein = Math.round((item.baseProtein || 0) * ratio * 10) / 10;
+      const newCarbs = Math.round((item.baseCarbs || 0) * ratio * 10) / 10;
+      const newFat = Math.round((item.baseFat || 0) * ratio * 10) / 10;
+      
+      newItems[index] = { 
+        ...item, 
+        currentAmount: newAmount,
+        quantity: `${newAmount}${item.unit}`,
+        calories: newCalories,
+        protein: newProtein,
+        carbs: newCarbs,
+        fat: newFat
+      };
+      setSelectedItems(newItems);
     }
   };
 
@@ -97,7 +148,7 @@ export default function RecentFoodItemsPage() {
                 value={mealTitle}
                 onChange={(e) => setMealTitle(e.target.value)}
                 placeholder="Ex: Almoço de Domingo, Lanche Pré-Treino"
-                className="w-full bg-muted border-none rounded-2xl py-5 px-6 text-lg font-bold focus:ring-2 focus:ring-red-500"
+                className="w-full bg-muted border-none rounded-2xl py-5 px-6 text-lg font-bold focus:ring-2 focus:ring-red-500 outline-none"
               />
             </div>
 
@@ -105,12 +156,45 @@ export default function RecentFoodItemsPage() {
               <h3 className="text-sm font-black text-muted-foreground uppercase px-2">Itens Selecionados</h3>
               <div className="bg-muted/50 rounded-3xl p-4 space-y-3">
                 {selectedItems.map((item, i) => (
-                  <div key={i} className="flex justify-between items-center text-sm border-b border-border/30 last:border-0 pb-3 last:pb-0">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-foreground">{item.name}</span>
-                      <span className="text-[10px] text-muted-foreground font-medium uppercase">{item.quantity}</span>
+                  <div key={i} className="flex flex-col gap-3 border-b border-border/30 last:border-0 pb-3 last:pb-0">
+                    <div className="flex justify-between items-center gap-4 text-sm">
+                      <div className="flex-1 min-w-0">
+                        <span className="font-bold text-foreground block truncate">{item.name}</span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center bg-black/5 rounded-xl px-3 py-2 w-fit transition-all border-none">
+                            <input 
+                              type="number"
+                              value={item.currentAmount || ''}
+                              onChange={(e) => updateItem(i, parseFloat(e.target.value) || 0)}
+                              className="bg-transparent border-none outline-none p-0 text-sm text-foreground font-black w-16 focus:ring-0"
+                            />
+                            <span className="text-[10px] text-muted-foreground font-bold uppercase">
+                              {item.unit}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 bg-muted/30 rounded-xl px-3 py-2">
+                        <span className="text-sm text-red-500 font-black min-w-[3rem] text-right">
+                          {item.calories}
+                        </span>
+                        <span className="text-[10px] text-red-500 font-black uppercase">kcal</span>
+                      </div>
                     </div>
-                    <span className="text-red-500 font-black">{item.calories} kcal</span>
+                    <div className="flex gap-4 px-2">
+                      <div className="flex flex-col">
+                        <span className="text-[8px] text-muted-foreground font-black uppercase">P</span>
+                        <span className="text-[10px] font-bold">{item.protein}g</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[8px] text-muted-foreground font-black uppercase">C</span>
+                        <span className="text-[10px] font-bold">{item.carbs}g</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[8px] text-muted-foreground font-black uppercase">G</span>
+                        <span className="text-[10px] font-bold">{item.fat}g</span>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -174,7 +258,7 @@ export default function RecentFoodItemsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar nos seus itens..."
-            className="w-full bg-muted border-none rounded-2xl py-4 pl-12 pr-6 text-sm font-medium focus:ring-2 focus:ring-red-500"
+            className="w-full bg-muted border-none rounded-2xl py-4 pl-12 pr-6 text-sm font-medium focus:ring-2 focus:ring-red-500 outline-none"
           />
         </div>
       </div>

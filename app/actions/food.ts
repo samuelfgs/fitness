@@ -6,6 +6,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
+import { cookies } from "next/headers";
+import { getTodayRange } from "@/lib/utils";
 
 const apiKey = process.env.GEMINI_API_KEY;
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
@@ -131,16 +133,27 @@ export async function saveFood(meals: any[], rawText: string) {
   }
 }
 
-export async function getFoodLogs(date: Date = new Date()) {
+export async function getFoodLogs(date?: Date) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) throw new Error("Unauthorized");
 
-  const start = new Date(date);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(date);
-  end.setHours(23, 59, 59, 999);
+  let start: Date;
+  let end: Date;
+
+  if (date) {
+    start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    end = new Date(date);
+    end.setHours(23, 59, 59, 999);
+  } else {
+    const cookieStore = await cookies();
+    const timezone = cookieStore.get('user-timezone')?.value || 'America/Sao_Paulo';
+    const range = getTodayRange(timezone);
+    start = range.start;
+    end = range.end;
+  }
 
   return await db.select()
     .from(foodLogs)
