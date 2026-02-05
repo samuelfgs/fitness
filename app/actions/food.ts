@@ -218,3 +218,74 @@ export async function deleteFoodItem(logId: string, itemIndex: number) {
     throw new Error("Erro ao excluir item.");
   }
 }
+
+export async function getRecentFoodItems(limit: number = 40) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Unauthorized");
+
+  const logs = await db.select()
+    .from(foodLogs)
+    .where(eq(foodLogs.userId, user.id))
+    .orderBy(desc(foodLogs.date))
+    .limit(limit * 2);
+
+  const uniqueItems: any[] = [];
+  const seen = new Set();
+
+  for (const log of logs) {
+    const items = log.content as any[];
+    for (const item of items) {
+      // Create a unique key based on name and quantity to avoid exact duplicates
+      const key = `${item.name}-${item.quantity}`.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueItems.push(item);
+      }
+      if (uniqueItems.length >= limit) break;
+    }
+    if (uniqueItems.length >= limit) break;
+  }
+
+  return uniqueItems;
+}
+
+export async function getRecentMeals(limit: number = 20) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Unauthorized");
+
+  const logs = await db.select()
+    .from(foodLogs)
+    .where(eq(foodLogs.userId, user.id))
+    .orderBy(desc(foodLogs.date))
+    .limit(limit * 5); // Fetch more to filter duplicates in JS
+
+  const uniqueMeals: any[] = [];
+  const seen = new Set();
+
+  for (const log of logs) {
+    // Create a unique key based on meal name and items content
+    const contentStr = JSON.stringify(log.content);
+    const key = `${log.mealName}-${contentStr}`;
+    
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniqueMeals.push({
+        id: log.id,
+        mealName: log.mealName,
+        items: log.content,
+        totalCalories: log.totalCalories,
+        totalProtein: log.totalProtein,
+        totalCarbs: log.totalCarbs,
+        totalFat: log.totalFat
+      });
+    }
+    
+    if (uniqueMeals.length >= limit) break;
+  }
+
+  return uniqueMeals;
+}

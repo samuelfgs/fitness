@@ -33,6 +33,20 @@ export default function LogFoodPage() {
   const [error, setError] = useState<string | null>(null);
   const [followUp, setFollowUp] = useState('');
 
+  React.useEffect(() => {
+    const pending = sessionStorage.getItem('pending_meals');
+    if (pending) {
+      try {
+        const meals = JSON.parse(pending);
+        setPreviewData({ meals });
+        setText('Repetido de histórico');
+        sessionStorage.removeItem('pending_meals');
+      } catch (e) {
+        console.error('Failed to parse pending meals', e);
+      }
+    }
+  }, []);
+
   async function handleAnalyze(e?: React.FormEvent) {
     if (e) e.preventDefault();
     if (!text.trim()) return;
@@ -124,7 +138,7 @@ export default function LogFoodPage() {
                 <textarea
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  rows={8}
+                  rows={6}
                   placeholder="Ex: Almoco - Arroz 100g, Feijão 100g, Frango Grelhado 150g"
                   className="w-full bg-muted border-none rounded-3xl p-6 text-foreground font-medium placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-red-500 transition-all resize-none"
                   required
@@ -138,20 +152,33 @@ export default function LogFoodPage() {
                 </div>
               )}
 
-              <Button 
-                type="submit"
-                disabled={isLoading || !text.trim()}
-                className="w-full bg-red-500 hover:bg-red-600 text-white font-black py-8 rounded-3xl shadow-lg shadow-red-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-              >
-                {isLoading ? (
-                  <Loader2 className="animate-spin" size={24} />
-                ) : (
-                  <>
-                    <Sparkles size={20} />
-                    ANALISAR COM IA
-                  </>
-                )}
-              </Button>
+              <div className="grid grid-cols-1 gap-3">
+                <Button 
+                  type="submit"
+                  disabled={isLoading || !text.trim()}
+                  className="w-full bg-red-500 hover:bg-red-600 text-white font-black py-8 rounded-3xl shadow-lg shadow-red-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                >
+                  {isLoading ? (
+                    <Loader2 className="animate-spin" size={24} />
+                  ) : (
+                    <>
+                      <Sparkles size={20} />
+                      ANALISAR COM IA
+                    </>
+                  )}
+                </Button>
+
+                <Link href="/log/food/recent" className="w-full">
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    className="w-full border-2 border-muted hover:bg-muted font-black py-8 rounded-3xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  >
+                    <Utensils size={20} />
+                    REPETIR REFEIÇÃO
+                  </Button>
+                </Link>
+              </div>
             </form>
           </div>
         ) : (
