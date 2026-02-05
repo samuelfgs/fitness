@@ -46,6 +46,7 @@ export default async function CalendarPage() {
   const activities: Activity[] = userWorkouts.map(w => ({
     id: w.id,
     type: w.activitySlug as ActivityType,
+    name: w.activityName,
     durationMinutes: w.duration || 0,
     caloriesBurned: w.calories || 0,
     date: w.startedAt?.toISOString() || new Date().toISOString(),

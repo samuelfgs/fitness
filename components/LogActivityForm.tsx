@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Activity as ActivityIcon, Waves, Footprints, Dumbbell, Bike, Flame, MoreHorizontal, ArrowLeft, Check, Clock, Flame as FlameIcon, StickyNote, Calendar, LucideIcon, Scale } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Activity as ActivityIcon, Waves, Footprints, Dumbbell, Bike, Flame, MoreHorizontal, ArrowLeft, Check, Clock, Flame as FlameIcon, StickyNote, Calendar, LucideIcon, Scale, Trophy } from 'lucide-react';
 import { Activity } from '@/lib/db/schema';
 import { logWorkout } from '@/app/actions/workouts';
 import { useRouter } from 'next/navigation';
+import TennisIcon from '@/components/icons/TennisIcon';
 
-const ICON_MAP: Record<string, LucideIcon> = {
+const ICON_MAP: Record<string, React.ComponentType<{ size?: number | string; className?: string }>> = {
   Activity: ActivityIcon,
   Waves,
   Footprints,
@@ -18,6 +19,8 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Calendar,
   StickyNote,
   Scale,
+  Trophy,
+  Tennis: TennisIcon,
 };
 
 interface Option {
@@ -43,7 +46,14 @@ interface LogActivityFormProps {
 export default function LogActivityForm({ activities }: LogActivityFormProps) {
   const [step, setStep] = useState(1);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [defaultDatetime, setDefaultDatetime] = useState('');
   const router = useRouter();
+
+  useEffect(() => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    setDefaultDatetime(now.toISOString().slice(0, 16));
+  }, []);
 
   const handleActivitySelect = (activity: Activity) => {
     setSelectedActivity(activity);
@@ -134,7 +144,7 @@ export default function LogActivityForm({ activities }: LogActivityFormProps) {
                      type="datetime-local"
                      name={field.name}
                      required={field.required}
-                     defaultValue={new Date().toISOString().slice(0, 16)}
+                     defaultValue={defaultDatetime}
                      className="w-full bg-muted/50 border-none rounded-2xl p-5 text-xl font-bold focus:ring-2 focus:ring-primary text-foreground"
                    />
                 )}

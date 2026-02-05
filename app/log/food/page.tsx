@@ -199,9 +199,9 @@ export default function LogFoodPage() {
               <div className="space-y-4">
                 {previewData.meals.map((meal, idx) => (
                   <div key={idx} className="bg-muted/50 rounded-3xl p-6 space-y-4">
-                    <div className="flex justify-between items-center border-b border-border/50 pb-4">
-                      <h3 className="font-black text-foreground">{meal.mealName}</h3>
-                      <span className="bg-red-500/10 text-red-500 text-xs font-black px-3 py-1 rounded-full uppercase">
+                    <div className="flex justify-between items-center border-b border-border/50 pb-4 gap-2">
+                      <h3 className="font-black text-foreground truncate">{meal.mealName}</h3>
+                      <span className="bg-red-500/10 text-red-500 text-[10px] font-black px-3 py-1 rounded-full uppercase whitespace-nowrap">
                         {meal.totalCalories} kcal
                       </span>
                     </div>

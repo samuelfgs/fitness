@@ -133,15 +133,15 @@ export default function FoodBreakdownPage() {
           ) : (
             logs.map((meal) => (
               <div key={meal.id} className="bg-card border border-border rounded-[2rem] overflow-hidden shadow-sm">
-                <div className="p-6 border-b border-border bg-muted/30 flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-red-500 p-2 rounded-xl text-white">
+                <div className="p-6 border-b border-border bg-muted/30 flex justify-between items-center gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="bg-red-500 p-2 rounded-xl text-white shrink-0">
                       <Utensils size={16} />
                     </div>
-                    <h3 className="font-black text-foreground text-lg">{meal.mealName}</h3>
+                    <h3 className="font-black text-foreground text-lg truncate">{meal.mealName}</h3>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
+                  <div className="flex items-center gap-4 shrink-0">
+                    <div className="text-right whitespace-nowrap">
                       <span className="font-black text-foreground">{meal.totalCalories}</span>
                       <span className="text-xs font-bold text-muted-foreground ml-1">kcal</span>
                     </div>

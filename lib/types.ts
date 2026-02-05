@@ -1,17 +1,19 @@
 export enum ActivityType {
-  Running = 'Running',
-  Cycling = 'Cycling',
-  Weightlifting = 'Weightlifting',
-  Yoga = 'Yoga',
-  Swimming = 'Swimming',
-  HIIT = 'HIIT',
-  Walking = 'Walking',
-  Other = 'Other'
+  Running = 'running',
+  Cycling = 'cycling',
+  Weightlifting = 'weightlifting',
+  Yoga = 'yoga',
+  Swimming = 'swimming',
+  HIIT = 'hiit',
+  Walking = 'walking',
+  Tennis = 'tennis',
+  Other = 'other'
 }
 
 export interface Activity {
   id: string;
   type: ActivityType;
+  name?: string;
   durationMinutes: number;
   caloriesBurned?: number;
   date: string; // ISO String

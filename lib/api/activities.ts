@@ -8,7 +8,7 @@ export const getCachedActivities = unstable_cache(
   },
   ["activities-list"],
   {
-    revalidate: 3600, // Cache for 1 hour
+    revalidate: 1, // Set to 1 second to effectively bypass stale cache
     tags: ["activities"],
   }
 );

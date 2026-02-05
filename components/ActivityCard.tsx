@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity } from '@/lib/types';
+import { Activity, ActivityType } from '@/lib/types';
 import { ACTIVITY_ICONS, ACTIVITY_COLORS } from '@/lib/constants';
 import { format } from 'date-fns';
 
@@ -9,17 +9,17 @@ interface ActivityCardProps {
 }
 
 const ActivityCard: React.FC<ActivityCardProps> = ({ activity, onDelete }) => {
-  const Icon = ACTIVITY_ICONS[activity.type];
-  const colorClass = ACTIVITY_COLORS[activity.type];
+  const Icon = ACTIVITY_ICONS[activity.type] || ACTIVITY_ICONS[ActivityType.Other];
+  const colorClass = ACTIVITY_COLORS[activity.type] || ACTIVITY_COLORS[ActivityType.Other];
 
   return (
     <div className="bg-card rounded-3xl p-5 shadow-sm border border-border flex items-center justify-between mb-3">
       <div className="flex items-center space-x-4">
         <div className={`p-3 rounded-2xl ${colorClass}`}>
-          <Icon size={24} />
+          {Icon && <Icon size={24} />}
         </div>
         <div>
-          <h3 className="font-bold text-card-foreground">{activity.type}</h3>
+          <h3 className="font-bold text-card-foreground">{activity.name || activity.type}</h3>
           <p className="text-xs text-muted-foreground font-medium">
             {format(new Date(activity.date), 'MMM d, h:mm a')}
           </p>

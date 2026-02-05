@@ -14,7 +14,6 @@ async function main() {
     { name: "startedAt", label: "Início", type: "datetime-local", required: true, icon: "Calendar", color: "text-green-500" },
     { name: "duration", label: "Duração", type: "number", required: true, suffix: "min", icon: "Clock", color: "text-blue-500" },
     { name: "calories", label: "Calorias", type: "number", required: false, suffix: "kcal", icon: "Flame", color: "text-orange-500" },
-    { name: "weight", label: "Peso", type: "number", required: false, suffix: "kg", icon: "Scale", color: "text-emerald-500" },
     { name: "notes", label: "Notas", type: "textarea", required: false, icon: "StickyNote", color: "text-muted-foreground" },
   ];
 
@@ -22,7 +21,7 @@ async function main() {
     { 
       name: 'Tênis', 
       slug: 'tennis', 
-      icon: 'Activity', 
+      icon: 'Tennis', 
       color: 'text-yellow-500 bg-yellow-500/10',
       fields: [
         {
@@ -65,6 +64,7 @@ async function main() {
     });
     console.log(`Seeded ${seed.name}`);
   }
+
   console.log("Done!");
   process.exit(0);
 }

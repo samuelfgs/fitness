@@ -154,6 +154,7 @@ export default async function DashboardPage() {
   const mappedActivities: Activity[] = todaysWorkouts.map(w => ({
     id: w.id,
     type: w.activitySlug as ActivityType, // Casting strictly for now, but slug matches enum loosely
+    name: w.activityName,
     durationMinutes: w.duration || 0,
     caloriesBurned: w.calories || 0,
     date: w.startedAt?.toISOString() || new Date().toISOString(),
@@ -200,13 +201,30 @@ export default async function DashboardPage() {
               <Utensils size={18} className="text-red-500" />
               <span className="text-[10px] font-black uppercase tracking-widest">Calorias</span>
             </div>
-            <div className="flex items-end space-x-1">
-              <span className="text-4xl font-black text-foreground leading-none">{totalCalories}</span>
-              <span className="text-sm font-bold text-muted-foreground mb-1">
-                {profile?.kcalGoal ? `/ ${profile.kcalGoal}` : 'kcal'}
-              </span>
+            <div className="flex flex-col">
+              <div className="flex items-baseline gap-1">
+                <span className={`${totalCalories > 999 ? 'text-3xl' : 'text-4xl'} font-black text-foreground leading-none transition-all`}>
+                  {totalCalories}
+                </span>
+                {!profile?.kcalGoal && (
+                  <span className="text-sm font-bold text-muted-foreground">kcal</span>
+                )}
+              </div>
+              {profile?.kcalGoal && (
+                <div className="flex items-center gap-1.5 mt-2">
+                  <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full ${totalCalories > profile.kcalGoal ? 'bg-red-500' : 'bg-green-500'} rounded-full transition-all duration-500`} 
+                      style={{ width: `${Math.min(100, (totalCalories / profile.kcalGoal) * 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-black text-muted-foreground whitespace-nowrap">
+                    {profile.kcalGoal}
+                  </span>
+                </div>
+              )}
             </div>
-            <div className="text-xs font-bold mt-2 text-muted-foreground">
+            <div className="text-[10px] font-black mt-2 text-muted-foreground uppercase tracking-wider">
               {profile?.kcalGoal ? 'Meta diária' : 'Consumidas hoje'}
             </div>
           </Link>
@@ -222,7 +240,7 @@ export default async function DashboardPage() {
               </span>
               <span className="text-sm font-bold text-muted-foreground mb-1">min</span>
             </div>
-            <div className="text-xs font-bold mt-2 text-muted-foreground">
+            <div className="text-[10px] font-black mt-2 text-muted-foreground uppercase tracking-wider">
               Total de hoje
             </div>
           </div>
@@ -236,7 +254,7 @@ export default async function DashboardPage() {
               <span className="text-4xl font-black text-foreground leading-none">{(totalWater / 1000).toFixed(1)}</span>
               <span className="text-sm font-bold text-muted-foreground mb-1">L</span>
             </div>
-            <div className="text-xs font-bold mt-2 text-muted-foreground">
+            <div className="text-[10px] font-black mt-2 text-muted-foreground uppercase tracking-wider">
               Total de hoje
             </div>
           </Link>
