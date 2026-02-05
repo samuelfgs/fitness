@@ -3,19 +3,25 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Utensils, Flame, Zap, Wheat, Droplet, Trash2, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
-import { getFoodLogs, deleteFoodLog, deleteFoodItem } from "@/app/actions/food";
+import { getFoodLogs, deleteFoodLog, deleteFoodItem, getWeeklyFoodStats } from "@/app/actions/food";
 import { useRouter } from 'next/navigation';
+import FoodWeekStats from "@/components/FoodWeekStats";
 
 export default function FoodBreakdownPage() {
   const [logs, setLogs] = useState<any[]>([]);
+  const [weekStats, setWeekStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);
   const router = useRouter();
 
-  const loadLogs = useCallback(async () => {
+  const loadData = useCallback(async () => {
     try {
-      const data = await getFoodLogs();
-      setLogs(data);
+      const [logsData, statsData] = await Promise.all([
+        getFoodLogs(),
+        getWeeklyFoodStats()
+      ]);
+      setLogs(logsData);
+      setWeekStats(statsData);
     } catch (error) {
       console.error(error);
     } finally {
@@ -24,15 +30,15 @@ export default function FoodBreakdownPage() {
   }, []);
 
   useEffect(() => {
-    loadLogs();
-  }, [loadLogs]);
+    loadData();
+  }, [loadData]);
 
   async function handleDeleteLog(id: string) {
     if (!confirm('Excluir esta refeição inteira?')) return;
     setActionId(id);
     try {
       await deleteFoodLog(id);
-      await loadLogs();
+      await loadData();
     } catch (error) {
       alert('Erro ao excluir');
     } finally {
@@ -45,7 +51,7 @@ export default function FoodBreakdownPage() {
     setActionId(`${logId}-${itemIndex}`);
     try {
       await deleteFoodItem(logId, itemIndex);
-      await loadLogs();
+      await loadData();
     } catch (error) {
       alert('Erro ao excluir item');
     } finally {
@@ -115,6 +121,9 @@ export default function FoodBreakdownPage() {
             </div>
           </div>
         </div>
+
+        {/* Weekly Stats */}
+        {weekStats && <FoodWeekStats stats={weekStats} />}
 
         {/* Meals List */}
         <div className="space-y-4">

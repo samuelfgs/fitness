@@ -8,6 +8,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { getTodayRange } from "@/lib/utils";
+import { getProfile } from "./profile";
 
 const apiKey = process.env.GEMINI_API_KEY;
 const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
@@ -56,6 +57,7 @@ export async function parseFood(rawText: string, history: { role: string, conten
     1. Prettify and Normalize: Convert all names to "Title Case" (e.g., "lanche da tarde" -> "Lanche da Tarde").
     2. Canonical Names: Use standard food names and correct typos (e.g., "ababax" -> "Abacaxi", "frango grelhad" -> "Frango Grelhado").
     3. Language: Keep all names in Portuguese (PT-BR).
+    4. Follow-up Context: If there is a conversation history, the "Text" provided is likely an adjustment, addition, or correction to the previous state. Maintain the existing items and meals unless the user explicitly asks to remove or replace them. For example, if the user previously logged "Arroz e feijão" and now says "adicione morango", the result should contain Arroz, Feijão, AND Morango.
 
     Return the result as a JSON object with the following structure:
     {
@@ -256,26 +258,33 @@ export async function getRecentFoodItems(limit: number = 40) {
     .from(foodLogs)
     .where(eq(foodLogs.userId, user.id))
     .orderBy(desc(foodLogs.date))
-    .limit(limit * 2);
+    .limit(100);
 
-  const uniqueItems: any[] = [];
-  const seen = new Set();
+  const itemCounts = new Map<string, { item: any, score: number }>();
+  const now = new Date();
 
   for (const log of logs) {
     const items = log.content as any[];
+    const logDate = new Date(log.date);
+    const diffDays = Math.max(0, Math.floor((now.getTime() - logDate.getTime()) / (1000 * 60 * 60 * 24)));
+    // Time decay factor: 1 / (days + 1)
+    const weight = 1 / (diffDays + 1);
+
     for (const item of items) {
-      // Create a unique key based on name and quantity to avoid exact duplicates
       const key = `${item.name}-${item.quantity}`.toLowerCase();
-      if (!seen.has(key)) {
-        seen.add(key);
-        uniqueItems.push(item);
+      const existing = itemCounts.get(key);
+      if (existing) {
+        existing.score += weight;
+      } else {
+        itemCounts.set(key, { item, score: weight });
       }
-      if (uniqueItems.length >= limit) break;
     }
-    if (uniqueItems.length >= limit) break;
   }
 
-  return uniqueItems;
+  return Array.from(itemCounts.values())
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map(entry => entry.item);
 }
 
 export async function getRecentMeals(limit: number = 20) {
@@ -390,4 +399,105 @@ export async function deleteRegisteredFood(id: string) {
     console.error("Error in deleteRegisteredFood:", error);
     throw new Error("Erro ao excluir alimento registrado.");
   }
+}
+
+export async function getWeeklyFoodStats() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Unauthorized");
+
+  const profile = await getProfile();
+  const kcalGoal = profile?.kcalGoal || 2000;
+
+  const cookieStore = await cookies();
+  const timezone = cookieStore.get('user-timezone')?.value || 'America/Sao_Paulo';
+  
+  // Get today's range in user's timezone
+  const { end: todayEnd } = getTodayRange(timezone);
+  
+  // Calculate the most recent Monday
+  // getDay() returns 0 for Sunday, 1 for Monday, ..., 6 for Saturday
+  const currentDay = todayEnd.getDay();
+  const diffToMonday = (currentDay === 0 ? 6 : currentDay - 1);
+  const monday = new Date(todayEnd.getTime());
+  monday.setDate(todayEnd.getDate() - diffToMonday);
+  monday.setHours(0, 0, 0, 0);
+
+  // We want to show 7 days starting from that Monday
+  const sevenDaysAgo = monday;
+  // We should also ensure we fetch logs up to the end of the week if needed, 
+  // but usually for a "week stats" we want the current week.
+  // Let's stick to the last 7 days but starting the SEQUENCE on the correct day if the user prefers,
+  // OR actually showing the "Current Week" (Mon-Sun).
+  
+  // The user said "the week is starting at sat, let's make it start on seg".
+  // This implies the 7-day window should start on Monday.
+  const endOfPeriod = new Date(monday.getTime() + 7 * 24 * 60 * 60 * 1000 - 1);
+
+  const logs = await db.select()
+    .from(foodLogs)
+    .where(
+        and(
+            eq(foodLogs.userId, user.id),
+            gte(foodLogs.date, sevenDaysAgo),
+            lte(foodLogs.date, endOfPeriod)
+        )
+    )
+    .orderBy(foodLogs.date);
+
+  // We need to group logs by their date in the user's timezone
+  const dailyStatsMap = new Map();
+  
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday.getTime() + i * 24 * 60 * 60 * 1000);
+    const dateStr = d.toLocaleDateString('en-CA', { timeZone: timezone }); // YYYY-MM-DD
+    const dayName = d.toLocaleDateString('pt-BR', { weekday: 'short', timeZone: timezone }).replace('.', '');
+    
+    dailyStatsMap.set(dateStr, {
+      date: dateStr,
+      dayName: dayName,
+      consumed: 0,
+      goal: kcalGoal
+    });
+  }
+
+  logs.forEach(log => {
+    const dateStr = log.date.toLocaleDateString('en-CA', { timeZone: timezone });
+    if (dailyStatsMap.has(dateStr)) {
+      const stat = dailyStatsMap.get(dateStr);
+      stat.consumed += log.totalCalories;
+    }
+  });
+
+  const dailyStats = Array.from(dailyStatsMap.values());
+  
+  // Calculate week balance
+  // Rule: Past days (excluding today) with 0 consumption are treated as hitting the goal (0 balance)
+  const todayStr = todayEnd.toLocaleDateString('en-CA', { timeZone: timezone });
+  
+  const weekBalance = dailyStats.reduce((acc, s) => {
+    // If it's a future day, don't count it in the balance
+    if (s.date > todayStr) {
+      return acc;
+    }
+    // If consumption is 0, we assume the user stayed on track (0 balance)
+    // This applies to both past days and today if nothing is logged yet.
+    if (s.consumed === 0) {
+      return acc;
+    }
+    // Otherwise, count the difference
+    return acc + (s.consumed - s.goal);
+  }, 0);
+
+  const weekTotalConsumed = dailyStats.reduce((acc, s) => acc + s.consumed, 0);
+  const weekTotalGoal = kcalGoal * 7;
+
+  return {
+    dailyStats,
+    kcalGoal,
+    weekTotalConsumed,
+    weekTotalGoal,
+    weekBalance
+  };
 }

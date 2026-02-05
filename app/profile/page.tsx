@@ -5,9 +5,9 @@ import { getProfile, updateProfile } from '@/app/actions/profile';
 import BottomNav from '@/components/BottomNav';
 import { ArrowLeft, User, Calendar, Ruler, Target, Utensils } from 'lucide-react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
+import { SubmitButton } from '@/components/SubmitButton';
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -112,9 +112,9 @@ export default async function ProfilePage() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full h-14 rounded-2xl font-black text-lg shadow-lg shadow-primary/20">
+            <SubmitButton className="w-full h-14 rounded-2xl font-black text-lg shadow-lg shadow-primary/20">
               Salvar Perfil
-            </Button>
+            </SubmitButton>
           </form>
         </div>
       </div>

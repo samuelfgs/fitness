@@ -109,7 +109,7 @@ export default function LogFoodPage() {
     try {
       const history = [
         { role: 'user', content: text },
-        { role: 'assistant', content: JSON.stringify(previewData) }
+        { role: 'assistant', content: `Current state: ${JSON.stringify(previewData)}` }
       ];
       const data = await parseFood(followUp, history);
       setPreviewData(data);
@@ -239,17 +239,12 @@ export default function LogFoodPage() {
               <div className="grid grid-cols-1 gap-3">
                 <Button 
                   type="submit"
-                  disabled={isLoading || !text.trim()}
+                  loading={isLoading}
+                  disabled={!text.trim()}
                   className="w-full bg-red-500 hover:bg-red-600 text-white font-black py-8 rounded-3xl shadow-lg shadow-red-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                 >
-                  {isLoading ? (
-                    <Loader2 className="animate-spin" size={24} />
-                  ) : (
-                    <>
-                      <Sparkles size={20} />
-                      ANALISAR COM IA
-                    </>
-                  )}
+                  <Sparkles size={20} />
+                  ANALISAR COM IA
                 </Button>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -347,17 +342,11 @@ export default function LogFoodPage() {
 
                 <Button 
                   onClick={handleSave}
-                  disabled={isLoading}
+                  loading={isLoading}
                   className="w-full bg-green-500 hover:bg-green-600 text-white font-black py-8 rounded-3xl shadow-lg shadow-green-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                 >
-                  {isLoading ? (
-                    <Loader2 className="animate-spin" size={24} />
-                  ) : (
-                    <>
-                      <Check size={20} />
-                      SALVAR REGISTRO
-                    </>
-                  )}
+                  <Check size={20} />
+                  SALVAR REGISTRO
                 </Button>
               </div>
             </div>

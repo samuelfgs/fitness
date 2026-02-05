@@ -180,17 +180,11 @@ export function RegisterFoodForm({ onSuccess, onCancel, initialData }: RegisterF
 
         <Button 
           type="submit"
-          disabled={isLoading}
+          loading={isLoading}
           className="w-full bg-blue-500 hover:bg-blue-600 text-white font-black py-8 rounded-3xl shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
         >
-          {isLoading ? (
-            <Loader2 className="animate-spin" size={24} />
-          ) : (
-            <>
-              <Save size={20} />
-              SALVAR ALIMENTO
-            </>
-          )}
+          <Save size={20} />
+          SALVAR ALIMENTO
         </Button>
       </form>
     </div>

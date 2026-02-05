@@ -126,7 +126,7 @@ export default function RecentFoodItemsPage() {
 
   if (step === 2) {
     return (
-      <div className="min-h-screen bg-background flex flex-col pb-24">
+      <div className="min-h-screen bg-background flex flex-col pb-40">
         <div className="px-6 py-6 flex items-center justify-between">
           <button 
             onClick={() => setStep(1)}
@@ -221,16 +221,18 @@ export default function RecentFoodItemsPage() {
           </div>
         </div>
 
-        <div className="fixed bottom-0 left-0 right-0 pointer-events-none">
-          <div className="max-w-md mx-auto p-6 bg-gradient-to-t from-background via-background to-transparent pointer-events-auto">
-            <Button 
-              onClick={handleConfirm}
-              disabled={!mealTitle.trim()}
-              className="w-full bg-red-500 hover:bg-red-600 text-white font-black py-8 rounded-3xl shadow-lg shadow-red-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            >
-              <Check size={20} />
-              SALVAR NO REGISTRO
-            </Button>
+        <div className="fixed bottom-0 left-0 right-0 pointer-events-none z-50">
+          <div className="max-w-md mx-auto p-8 bg-gradient-to-t from-background via-background to-transparent pt-32 pointer-events-none">
+            <div className="pointer-events-auto">
+              <Button 
+                onClick={handleConfirm}
+                disabled={!mealTitle.trim()}
+                className="w-full bg-red-500 hover:bg-red-600 text-white font-black py-8 rounded-3xl shadow-lg shadow-red-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              >
+                <Check size={20} />
+                SALVAR NO REGISTRO
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -238,7 +240,7 @@ export default function RecentFoodItemsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pb-24">
+    <div className={`min-h-screen bg-background flex flex-col ${selectedItems.length > 0 ? 'pb-70' : 'pb-24'}`}>
       <div className="px-6 py-6 flex items-center justify-between">
         <Link 
           href="/log/food" 
@@ -315,24 +317,26 @@ export default function RecentFoodItemsPage() {
       </div>
 
       {selectedItems.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 pointer-events-none">
-          <div className="max-w-md mx-auto p-6 bg-gradient-to-t from-background via-background to-transparent pt-12 pointer-events-auto">
-            <div className="bg-foreground text-background rounded-3xl p-6 mb-4 flex items-center justify-between shadow-xl">
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase opacity-60">Selecionados</span>
-                <span className="text-lg font-black">{selectedItems.length} {selectedItems.length === 1 ? 'item' : 'itens'}</span>
+        <div className="fixed bottom-0 left-0 right-0 pointer-events-none z-50">
+          <div className="max-w-md mx-auto p-8 bg-gradient-to-t from-background via-background to-transparent pt-32 pointer-events-none">
+            <div className="pointer-events-auto space-y-4">
+              <div className="bg-foreground text-background rounded-3xl p-6 flex items-center justify-between shadow-xl">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black uppercase opacity-60">Selecionados</span>
+                  <span className="text-lg font-black">{selectedItems.length} {selectedItems.length === 1 ? 'item' : 'itens'}</span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-[10px] font-black uppercase opacity-60">Total</span>
+                  <span className="text-lg font-black">{totals.calories} kcal</span>
+                </div>
               </div>
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] font-black uppercase opacity-60">Total</span>
-                <span className="text-lg font-black">{totals.calories} kcal</span>
-              </div>
+              <Button 
+                onClick={() => setStep(2)}
+                className="w-full bg-red-500 hover:bg-red-600 text-white font-black py-8 rounded-3xl shadow-lg shadow-red-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              >
+                PRÓXIMO
+              </Button>
             </div>
-            <Button 
-              onClick={() => setStep(2)}
-              className="w-full bg-red-500 hover:bg-red-600 text-white font-black py-8 rounded-3xl shadow-lg shadow-red-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            >
-              PRÓXIMO
-            </Button>
           </div>
         </div>
       )}
