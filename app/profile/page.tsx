@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getProfile, updateProfile } from '@/app/actions/profile';
 import BottomNav from '@/components/BottomNav';
-import { ArrowLeft, User, Calendar, Ruler, Target, Utensils } from 'lucide-react';
+import { ArrowLeft, User, Calendar, Ruler, Target, Utensils, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
@@ -25,12 +25,14 @@ export default async function ProfilePage() {
     const age = formData.get("age") ? parseInt(formData.get("age") as string) : undefined;
     const height = formData.get("height") ? parseInt(formData.get("height") as string) : undefined;
     const desiredWeightKg = formData.get("desiredWeight") ? parseFloat(formData.get("desiredWeight") as string) : undefined;
+    const weightReference = formData.get("weightReference") as string | undefined;
     const kcalGoal = formData.get("kcalGoal") ? parseInt(formData.get("kcalGoal") as string) : undefined;
 
     await updateProfile({
       age,
       height,
       desiredWeight: desiredWeightKg ? Math.round(desiredWeightKg * 1000) : undefined,
+      weightReference,
       kcalGoal,
     });
 
@@ -94,6 +96,23 @@ export default async function ProfilePage() {
                   defaultValue={profile?.desiredWeight ? profile.desiredWeight / 1000 : ''}
                   className="bg-background/50 border-border rounded-xl h-12"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="weightReference" className="flex items-center space-x-2">
+                  <TrendingUp size={16} className="text-primary" />
+                  <span>Referência de Diferença de Peso</span>
+                </Label>
+                <select 
+                  id="weightReference" 
+                  name="weightReference" 
+                  defaultValue={profile?.weightReference || 'previous'}
+                  className="w-full bg-background/50 border border-border rounded-xl h-12 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="previous">Peso Anterior</option>
+                  <option value="starting">Peso Inicial</option>
+                  <option value="desired">Meta de Peso</option>
+                </select>
               </div>
 
               <div className="space-y-2">

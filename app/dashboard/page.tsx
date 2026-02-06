@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
 import { weightMeasurements, workouts, activities, waterLogs, stepsLogs, foodLogs, profiles } from '@/lib/db/schema';
-import { desc, eq, and, gte, lte } from 'drizzle-orm';
+import { desc, eq, and, gte, lte, asc } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { getTodayRange } from '@/lib/utils';
@@ -117,17 +117,43 @@ export default async function DashboardPage() {
   ]);
   
   const profile = userProfile.length > 0 ? userProfile[0] : null;
+
+  // Calculate weight reference and difference
+  let referenceWeight = null;
+  const latestWeight = latestWeights.length > 0 ? latestWeights[0].weight : null;
+
+  if (profile?.weightReference === 'starting') {
+    const firstWeight = await db.select()
+      .from(weightMeasurements)
+      .where(eq(weightMeasurements.userId, user.id))
+      .orderBy(asc(weightMeasurements.date))
+      .limit(1);
+    referenceWeight = firstWeight.length > 0 ? firstWeight[0].weight : null;
+  } else if (profile?.weightReference === 'desired') {
+    referenceWeight = profile.desiredWeight;
+  } else if (profile?.weightReference === 'selected') {
+    const selectedWeight = await db.select()
+      .from(weightMeasurements)
+      .where(
+        and(
+          eq(weightMeasurements.userId, user.id),
+          eq(weightMeasurements.isReference, true)
+        )
+      )
+      .limit(1);
+    referenceWeight = selectedWeight.length > 0 ? selectedWeight[0].weight : null;
+  } else {
+    // Default to 'previous'
+    referenceWeight = latestWeights.length > 1 ? latestWeights[1].weight : null;
+  }
+  
+  const latestWeightKg = latestWeight ? latestWeight / 1000 : null;
+  const referenceWeightKg = referenceWeight ? referenceWeight / 1000 : null;
+  const weightDiff = latestWeightKg && referenceWeightKg ? latestWeightKg - referenceWeightKg : 0;
+
   const totalWater = todaysWaterLogs.reduce((acc, log) => acc + log.amount, 0);
   const totalSteps = todaysStepsLogs.reduce((acc, log) => acc + log.count, 0);
   const totalCalories = todaysFoodLogs.reduce((acc, log) => acc + log.totalCalories, 0);
-
-  const latestWeight = latestWeights.length > 0 ? latestWeights[0].weight : null;
-  const previousWeight = latestWeights.length > 1 ? latestWeights[1].weight : null;
-  
-  // Weights are stored in grams in DB, need to convert to kg for display
-  const latestWeightKg = latestWeight ? latestWeight / 1000 : null;
-  const previousWeightKg = previousWeight ? previousWeight / 1000 : null;
-  const weightDiff = latestWeightKg && previousWeightKg ? latestWeightKg - previousWeightKg : 0;
 
   // Calculate BMI (IMC)
   let bmi = null;
@@ -183,7 +209,7 @@ export default async function DashboardPage() {
               <span className="text-sm font-bold text-muted-foreground mb-1">kg</span>
             </div>
             <div className="flex flex-wrap gap-2 mt-2">
-              {latestWeightKg && previousWeightKg && (
+              {latestWeightKg && referenceWeightKg !== null && (
                  <div className={`text-[10px] font-black inline-flex items-center px-2 py-1 rounded-lg ${weightDiff <= 0 ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
                     {weightDiff > 0 ? '+' : ''}{weightDiff.toFixed(1)} kg
                  </div>

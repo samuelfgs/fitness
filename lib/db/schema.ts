@@ -66,6 +66,7 @@ export const weightMeasurements = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     userId: uuid("user_id").notNull(),
     weight: integer("weight"), // stored in grams
+    isReference: boolean("is_reference").default(false),
     date: timestamp("date").notNull().defaultNow(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
@@ -148,6 +149,7 @@ export const profiles = pgTable(
     age: integer("age"),
     height: integer("height"), // in cm
     desiredWeight: integer("desired_weight"), // in grams
+    weightReference: varchar("weight_reference", { length: 50 }).default("previous"), // 'previous', 'starting', 'desired'
     kcalGoal: integer("kcal_goal"),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   }

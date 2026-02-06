@@ -10,6 +10,7 @@ export async function updateProfile(data: {
   age?: number;
   height?: number;
   desiredWeight?: number;
+  weightReference?: string;
   kcalGoal?: number;
 }) {
   const supabase = await createClient();

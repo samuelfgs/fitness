@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer, YAxis } from 'recharts';
+import { AreaChart, Area, XAxis, Tooltip, ResponsiveContainer, YAxis, LabelList } from 'recharts';
 import { format } from 'date-fns';
 import { WeightMeasurement } from '@/lib/db/schema';
 
@@ -10,12 +10,26 @@ interface WeightEvolutionChartProps {
 }
 
 export default function WeightEvolutionChart({ weights }: WeightEvolutionChartProps) {
-  const chartData = [...weights]
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .map(w => ({
-      date: format(new Date(w.date), 'dd/MM'),
-      weight: (w.weight ?? 0) / 1000
-    }));
+  const sortedWeights = [...weights].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  
+  const chartData = sortedWeights.map(w => ({
+    date: format(new Date(w.date), 'dd/MM'),
+    weight: (w.weight ?? 0) / 1000 as number | null,
+    isRealData: true
+  }));
+
+  // Add a padding point one day before the first measurement
+  if (sortedWeights.length > 0) {
+    const firstDate = new Date(sortedWeights[0].date);
+    const paddingDate = new Date(firstDate);
+    paddingDate.setDate(firstDate.getDate() - 1);
+    
+    chartData.unshift({
+      date: format(paddingDate, 'dd/MM'),
+      weight: null,
+      isRealData: false
+    });
+  }
 
   if (chartData.length < 2) {
     return (
@@ -27,19 +41,21 @@ export default function WeightEvolutionChart({ weights }: WeightEvolutionChartPr
 
   // Calculate min and max for Y axis based on user preference:
   // +/- 20 from min/max and rounded to nearest dec unit
-  const weightValues = chartData.map(d => d.weight);
+  const weightValues = chartData
+    .map(d => d.weight)
+    .filter((w): w is number => w !== null);
   const minWeight = Math.min(...weightValues);
   const maxWeight = Math.max(...weightValues);
   
   const domainMin = Math.floor((minWeight - 20) / 10) * 10;
-  const domainMax = Math.ceil((maxWeight + 10) / 10) * 10;
+  const domainMax = Math.ceil((maxWeight) / 10) * 10;
 
   return (
     <div className="h-64 bg-card rounded-[2rem] border border-border mb-8 shadow-sm p-4 overflow-hidden outline-none focus:outline-none [&_*]:outline-none">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart 
           data={chartData} 
-          margin={{ top: 10, right: 20, left: 0, bottom: 20 }}
+          margin={{ top: 25, right: 20, left: 0, bottom: 20 }}
           accessibilityLayer={false}
           style={{ outline: 'none' }}
           tabIndex={-1}
@@ -87,7 +103,43 @@ export default function WeightEvolutionChart({ weights }: WeightEvolutionChartPr
             fillOpacity={1} 
             fill="url(#colorWeight)" 
             animationDuration={1500}
-          />
+            connectNulls={false}
+            dot={(props: any) => {
+              const { cx, cy, payload } = props;
+              if (!payload.isRealData) return <></>;
+              return <circle cx={cx} cy={cy} r={4} fill="#22c55e" strokeWidth={2} stroke="#fff" />;
+            }}
+          >
+            <LabelList 
+              dataKey="weight" 
+              position="top"
+              content={(props: any) => {
+                const { x, y, value, index } = props;
+                const total = chartData.length;
+                const isFirstReal = index === 1; // index 0 is the padding
+                const isLast = index === total - 1;
+
+                if (!isFirstReal && !isLast) return null;
+
+                return (
+                  <g>
+                    <circle cx={x} cy={y - 18} r={14} fill="#22c55e" />
+                    <text 
+                      x={x} 
+                      y={y - 18} 
+                      dy={4} 
+                      fontSize={8} 
+                      fill="#fff" 
+                      textAnchor="middle" 
+                      fontWeight="bold"
+                    >
+                      {value.toFixed(1)}
+                    </text>
+                  </g>
+                );
+              }}
+            />
+          </Area>
         </AreaChart>
       </ResponsiveContainer>
     </div>

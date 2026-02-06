@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ADD COLUMN "weight_reference" varchar(50) DEFAULT 'previous';

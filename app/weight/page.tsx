@@ -6,6 +6,8 @@ import { weightMeasurements } from '@/lib/db/schema';
 import { desc, eq } from 'drizzle-orm';
 import { createClient } from '@/lib/supabase/server';
 import WeightEvolutionChart from '@/components/WeightEvolutionChart';
+import { setAsReference } from '@/app/actions/weight';
+import { Star } from 'lucide-react';
 
 import { redirect } from 'next/navigation';
 
@@ -67,6 +69,7 @@ export default async function WeightPage() {
                   <tr>
                     <th className="px-6 py-4 text-left text-xs font-black text-muted-foreground uppercase tracking-widest">Data</th>
                     <th className="px-6 py-4 text-right text-xs font-black text-muted-foreground uppercase tracking-widest">Peso</th>
+                    <th className="px-6 py-4 text-right text-xs font-black text-muted-foreground uppercase tracking-widest w-10">Ref</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -77,6 +80,20 @@ export default async function WeightPage() {
                       </td>
                       <td className="px-6 py-4 text-sm font-black text-foreground text-right">
                         {(entry.weight ?? 0) / 1000} kg
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <form action={async () => {
+                          "use server";
+                          await setAsReference(entry.id);
+                        }}>
+                          <button 
+                            type="submit"
+                            className={`p-2 rounded-lg transition-colors ${entry.isReference ? 'text-yellow-500 bg-yellow-500/10' : 'text-muted-foreground hover:bg-muted'}`}
+                            title={entry.isReference ? "Referência atual" : "Definir como referência"}
+                          >
+                            <Star size={18} fill={entry.isReference ? "currentColor" : "none"} />
+                          </button>
+                        </form>
                       </td>
                     </tr>
                   ))}
