@@ -3,15 +3,16 @@ import { Activity, WeightEntry, ActivityType } from '@/lib/types';
 import ActivityCard from '@/components/ActivityCard';
 import BottomNav from '@/components/BottomNav';
 import { UserAvatar } from '@/components/UserAvatar';
-import { TrendingUp, ArrowRight, Activity as ActivityIcon, Droplets, Footprints, Utensils } from 'lucide-react';
+import { TrendingUp, ArrowRight, Activity as ActivityIcon, Droplets, Footprints, Utensils, Camera } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
-import { weightMeasurements, workouts, activities, waterLogs, stepsLogs, foodLogs, profiles } from '@/lib/db/schema';
+import { weightMeasurements, workouts, activities, waterLogs, stepsLogs, foodLogs, profiles, progressPhotos } from '@/lib/db/schema';
 import { desc, eq, and, gte, lte, asc } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { getTodayRange } from '@/lib/utils';
+import { differenceInDays } from 'date-fns';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -45,7 +46,8 @@ export default async function DashboardPage() {
     todaysWaterLogs,
     todaysStepsLogs,
     todaysFoodLogs,
-    userProfile
+    userProfile,
+    latestProgressPhoto
   ] = await Promise.all([
     // Fetch latest weights
     db.select()
@@ -113,10 +115,22 @@ export default async function DashboardPage() {
     db.select()
       .from(profiles)
       .where(eq(profiles.id, user.id))
+      .limit(1),
+
+    // Fetch latest progress photo
+    db.select()
+      .from(progressPhotos)
+      .where(eq(progressPhotos.userId, user.id))
+      .orderBy(desc(progressPhotos.date))
       .limit(1)
   ]);
   
   const profile = userProfile.length > 0 ? userProfile[0] : null;
+
+  // Progress Photo Logic
+  const lastPhoto = latestProgressPhoto.length > 0 ? latestProgressPhoto[0] : null;
+  const daysSinceLastPhoto = lastPhoto ? differenceInDays(new Date(), new Date(lastPhoto.date)) : Infinity;
+  const isPhotoDue = !lastPhoto || daysSinceLastPhoto > 14;
 
   // Calculate weight reference and difference
   let referenceWeight = null;
@@ -196,6 +210,23 @@ export default async function DashboardPage() {
           </div>
           <UserAvatar userAvatar={userAvatar} />
         </header>
+
+        {isPhotoDue && (
+          <Link href="/log/progress" className="block bg-primary text-primary-foreground p-6 rounded-[2rem] shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all active:scale-95">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                <Camera size={24} className="text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black leading-tight">Hora da foto!</h3>
+                <p className="text-sm font-bold text-primary-foreground/80 leading-tight mt-1">
+                  {lastPhoto ? 'Já se passaram 2 semanas.' : 'Registre seu progresso inicial.'}
+                </p>
+              </div>
+              <ArrowRight size={20} className="ml-auto text-white/50" />
+            </div>
+          </Link>
+        )}
 
         {/* Stats Summary */}
         <div className="grid grid-cols-2 gap-4">
@@ -312,6 +343,28 @@ export default async function DashboardPage() {
               <span className="text-sm font-bold text-muted-foreground mb-1 ml-2">de 10.000 passos</span>
             </div>
           </div>
+
+          <Link href="/progress" className="bg-card p-6 rounded-[2rem] shadow-sm border border-border col-span-2 active:scale-95 transition-all">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-primary/10 rounded-xl">
+                  <Camera size={20} className="text-primary" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground block">Evolução</span>
+                  <span className="text-sm font-black text-foreground">Fotos de Progresso</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {lastPhoto && (
+                  <span className="text-[10px] font-bold text-muted-foreground">
+                    Última: {new Date(lastPhoto.date).toLocaleDateString('pt-BR')}
+                  </span>
+                )}
+                <ArrowRight size={16} className="text-muted-foreground" />
+              </div>
+            </div>
+          </Link>
         </div>
 
         {/* Today's Log */}

@@ -142,6 +142,23 @@ export const registeredFoods = pgTable(
   })
 );
 
+export const progressPhotos = pgTable(
+  "progress_photos",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").notNull(),
+    frontUrl: text("front_url"),
+    backUrl: text("back_url"),
+    sideLeftUrl: text("side_left_url"),
+    sideRightUrl: text("side_right_url"),
+    date: timestamp("date").notNull().defaultNow(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => ({
+    userIdIdx: index("idx_progress_photos_user_id").on(table.userId),
+  })
+);
+
 export const profiles = pgTable(
   "profiles",
   {
@@ -172,5 +189,7 @@ export type FoodLog = typeof foodLogs.$inferSelect;
 export type NewFoodLog = typeof foodLogs.$inferInsert;
 export type RegisteredFood = typeof registeredFoods.$inferSelect;
 export type NewRegisteredFood = typeof registeredFoods.$inferInsert;
+export type ProgressPhoto = typeof progressPhotos.$inferSelect;
+export type NewProgressPhoto = typeof progressPhotos.$inferInsert;
 export type Profile = typeof profiles.$inferSelect;
 export type NewProfile = typeof profiles.$inferInsert;

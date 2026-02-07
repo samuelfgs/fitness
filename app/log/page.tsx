@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Dumbbell, Droplets, Scale, Footprints, X, Utensils } from 'lucide-react';
+import { ArrowLeft, Dumbbell, Droplets, Scale, Footprints, X, Utensils, Camera } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LogSelectorPage() {
@@ -19,6 +19,14 @@ export default function LogSelectorPage() {
       href: '/log/food',
       color: 'bg-red-500',
       textColor: 'text-red-500',
+    },
+    {
+      title: 'Fotos',
+      description: 'Acompanhe seu progresso visual',
+      icon: Camera,
+      href: '/log/progress',
+      color: 'bg-primary',
+      textColor: 'text-primary',
     },
     {
       title: 'Água',
