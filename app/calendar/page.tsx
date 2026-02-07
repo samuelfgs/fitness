@@ -1,11 +1,11 @@
 import React from 'react';
-import { Activity, WeightEntry, ActivityType } from '@/lib/types';
+import { Activity, WeightEntry, ActivityType, FoodLogEntry, WaterLogEntry, StepsLogEntry } from '@/lib/types';
 import BottomNav from '@/components/BottomNav';
 import { UserAvatar } from '@/components/UserAvatar';
 import { createClient } from '@/lib/supabase/server';
 import CalendarView from '@/components/CalendarView';
 import { db } from '@/lib/db';
-import { weightMeasurements, workouts, activities as activitiesSchema } from '@/lib/db/schema';
+import { weightMeasurements, workouts, activities as activitiesSchema, foodLogs, waterLogs, stepsLogs } from '@/lib/db/schema';
 import { desc, eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 
@@ -28,21 +28,49 @@ export default async function CalendarPage() {
 
   const userAvatar = user?.user_metadata?.avatar_url || "https://picsum.photos/100/100";
 
-  // Fetch all workouts
-  const userWorkouts = await db.select({
-    id: workouts.id,
-    duration: workouts.duration,
-    calories: workouts.calories,
-    startedAt: workouts.startedAt,
-    activityName: activitiesSchema.name,
-    activitySlug: activitiesSchema.slug,
-  })
-    .from(workouts)
-    .innerJoin(activitiesSchema, eq(workouts.activityId, activitiesSchema.id))
-    .where(eq(workouts.userId, user.id))
-    .orderBy(desc(workouts.startedAt));
+  // Fetch all data in parallel
+  const [
+    userWorkouts,
+    userWeights,
+    userFood,
+    userWater,
+    userSteps
+  ] = await Promise.all([
+    db.select({
+      id: workouts.id,
+      duration: workouts.duration,
+      calories: workouts.calories,
+      startedAt: workouts.startedAt,
+      activityName: activitiesSchema.name,
+      activitySlug: activitiesSchema.slug,
+    })
+      .from(workouts)
+      .innerJoin(activitiesSchema, eq(workouts.activityId, activitiesSchema.id))
+      .where(eq(workouts.userId, user.id))
+      .orderBy(desc(workouts.startedAt)),
 
-  // Map workouts to Activity interface
+    db.select()
+      .from(weightMeasurements)
+      .where(eq(weightMeasurements.userId, user.id))
+      .orderBy(desc(weightMeasurements.date)),
+
+    db.select()
+      .from(foodLogs)
+      .where(eq(foodLogs.userId, user.id))
+      .orderBy(desc(foodLogs.date)),
+
+    db.select()
+      .from(waterLogs)
+      .where(eq(waterLogs.userId, user.id))
+      .orderBy(desc(waterLogs.date)),
+
+    db.select()
+      .from(stepsLogs)
+      .where(eq(stepsLogs.userId, user.id))
+      .orderBy(desc(stepsLogs.date))
+  ]);
+
+  // Map data to interfaces
   const activities: Activity[] = userWorkouts.map(w => ({
     id: w.id,
     type: w.activitySlug as ActivityType,
@@ -52,17 +80,33 @@ export default async function CalendarPage() {
     date: w.startedAt?.toISOString() || new Date().toISOString(),
   }));
 
-  // Fetch all weights
-  const userWeights = await db.select()
-    .from(weightMeasurements)
-    .where(eq(weightMeasurements.userId, user.id))
-    .orderBy(desc(weightMeasurements.date));
-
-  // Map weights to WeightEntry interface
   const weights: WeightEntry[] = userWeights.map(w => ({
     id: w.id,
-    weight: (w.weight || 0) / 1000, // Convert grams to kg
+    weight: (w.weight || 0) / 1000,
     date: w.date.toISOString(),
+  }));
+
+  const food: FoodLogEntry[] = userFood.map(f => ({
+    id: f.id,
+    mealName: f.mealName,
+    totalCalories: f.totalCalories,
+    totalProtein: f.totalProtein ?? 0,
+    totalCarbs: f.totalCarbs ?? 0,
+    totalFat: f.totalFat ?? 0,
+    date: f.date.toISOString(),
+    items: f.content as any[],
+  }));
+
+  const water: WaterLogEntry[] = userWater.map(w => ({
+    id: w.id,
+    amount: w.amount,
+    date: w.date.toISOString(),
+  }));
+
+  const steps: StepsLogEntry[] = userSteps.map(s => ({
+    id: s.id,
+    count: s.count,
+    date: s.date.toISOString(),
   }));
 
   return (
@@ -76,7 +120,13 @@ export default async function CalendarPage() {
             <UserAvatar userAvatar={userAvatar} />
           </div>
         </header>
-        <CalendarView initialActivities={activities} initialWeights={weights} />
+        <CalendarView 
+          initialActivities={activities} 
+          initialWeights={weights} 
+          initialFood={food}
+          initialWater={water}
+          initialSteps={steps}
+        />
       </div>
       <BottomNav />
     </div>

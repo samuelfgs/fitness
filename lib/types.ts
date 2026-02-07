@@ -26,6 +26,29 @@ export interface WeightEntry {
   date: string; // ISO String
 }
 
+export interface FoodLogEntry {
+  id: string;
+  mealName: string;
+  totalCalories: number;
+  totalProtein?: number;
+  totalCarbs?: number;
+  totalFat?: number;
+  date: string; // ISO String
+  items: any[];
+}
+
+export interface WaterLogEntry {
+  id: string;
+  amount: number;
+  date: string; // ISO String
+}
+
+export interface StepsLogEntry {
+  id: string;
+  count: number;
+  date: string; // ISO String
+}
+
 export interface DailyStats {
   date: string;
   totalDuration: number;

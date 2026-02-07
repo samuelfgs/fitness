@@ -147,7 +147,12 @@ export default function FoodBreakdownPage() {
                     <div className="bg-red-500 p-2 rounded-xl text-white shrink-0">
                       <Utensils size={16} />
                     </div>
-                    <h3 className="font-black text-foreground text-lg truncate">{meal.mealName}</h3>
+                    <div className="min-w-0">
+                      <h3 className="font-black text-foreground text-lg truncate">{meal.mealName}</h3>
+                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider -mt-1">
+                        P: {meal.totalProtein || 0}g • C: {meal.totalCarbs || 0}g • G: {meal.totalFat || 0}g
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-4 shrink-0">
                     <div className="text-right whitespace-nowrap">

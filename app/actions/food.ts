@@ -126,18 +126,54 @@ export async function saveFood(meals: any[], rawText: string) {
     throw new Error("Unauthorized");
   }
 
+  const cookieStore = await cookies();
+  const timezone = cookieStore.get('user-timezone')?.value || 'America/Sao_Paulo';
+  const { start, end } = getTodayRange(timezone);
+
   try {
     for (const meal of meals) {
-      await db.insert(foodLogs).values({
-        userId: user.id,
-        mealName: meal.mealName,
-        rawText: rawText,
-        content: meal.items,
-        totalCalories: Math.round(meal.totalCalories),
-        totalProtein: Math.round(meal.totalProtein),
-        totalCarbs: Math.round(meal.totalCarbs),
-        totalFat: Math.round(meal.totalFat),
-      });
+      // Check if a meal with the same name already exists for today
+      const [existingMeal] = await db.select()
+        .from(foodLogs)
+        .where(
+          and(
+            eq(foodLogs.userId, user.id),
+            eq(foodLogs.mealName, meal.mealName),
+            gte(foodLogs.date, start),
+            lte(foodLogs.date, end)
+          )
+        )
+        .limit(1);
+
+      if (existingMeal) {
+        // Update existing meal
+        const oldContent = existingMeal.content as any[];
+        const newContent = [...oldContent, ...meal.items];
+        
+        await db.update(foodLogs)
+          .set({
+            content: newContent,
+            totalCalories: existingMeal.totalCalories + Math.round(meal.totalCalories || 0),
+            totalProtein: (existingMeal.totalProtein || 0) + Math.round(meal.totalProtein || 0),
+            totalCarbs: (existingMeal.totalCarbs || 0) + Math.round(meal.totalCarbs || 0),
+            totalFat: (existingMeal.totalFat || 0) + Math.round(meal.totalFat || 0),
+            rawText: existingMeal.rawText ? `${existingMeal.rawText}\n${rawText}` : rawText,
+            date: new Date(), // Update date to reflect the latest addition
+          })
+          .where(eq(foodLogs.id, existingMeal.id));
+      } else {
+        // Insert new meal
+        await db.insert(foodLogs).values({
+          userId: user.id,
+          mealName: meal.mealName,
+          rawText: rawText,
+          content: meal.items,
+          totalCalories: Math.round(meal.totalCalories || 0),
+          totalProtein: Math.round(meal.totalProtein || 0),
+          totalCarbs: Math.round(meal.totalCarbs || 0),
+          totalFat: Math.round(meal.totalFat || 0),
+        });
+      }
     }
 
     revalidatePath("/dashboard");
