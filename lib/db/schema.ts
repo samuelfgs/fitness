@@ -151,6 +151,7 @@ export const profiles = pgTable(
     desiredWeight: integer("desired_weight"), // in grams
     weightReference: varchar("weight_reference", { length: 50 }).default("previous"), // 'previous', 'starting', 'desired'
     kcalGoal: integer("kcal_goal"),
+    waterGoal: integer("water_goal").default(2000), // in ml
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   }
 );

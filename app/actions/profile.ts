@@ -12,6 +12,7 @@ export async function updateProfile(data: {
   desiredWeight?: number;
   weightReference?: string;
   kcalGoal?: number;
+  waterGoal?: number;
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

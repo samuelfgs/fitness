@@ -3,11 +3,14 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getProfile, updateProfile } from '@/app/actions/profile';
 import BottomNav from '@/components/BottomNav';
-import { ArrowLeft, User, Calendar, Ruler, Target, Utensils, TrendingUp } from 'lucide-react';
+import { ArrowLeft, User, Calendar, Ruler, Target, Utensils, TrendingUp, Droplets } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { SubmitButton } from '@/components/SubmitButton';
+import { db } from '@/lib/db';
+import { weightMeasurements } from '@/lib/db/schema';
+import { desc, eq } from 'drizzle-orm';
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -17,7 +20,17 @@ export default async function ProfilePage() {
     return redirect("/");
   }
 
-  const profile = await getProfile();
+  const [profile, latestWeightEntry] = await Promise.all([
+    getProfile(),
+    db.select()
+      .from(weightMeasurements)
+      .where(eq(weightMeasurements.userId, user.id))
+      .orderBy(desc(weightMeasurements.date))
+      .limit(1)
+  ]);
+
+  const latestWeight = latestWeightEntry.length > 0 ? latestWeightEntry[0].weight : 70000;
+  const recommendedWaterGoal = Math.round((latestWeight / 1000) * 35);
 
   async function handleSubmit(formData: FormData) {
     "use server";
@@ -27,6 +40,7 @@ export default async function ProfilePage() {
     const desiredWeightKg = formData.get("desiredWeight") ? parseFloat(formData.get("desiredWeight") as string) : undefined;
     const weightReference = formData.get("weightReference") as string | undefined;
     const kcalGoal = formData.get("kcalGoal") ? parseInt(formData.get("kcalGoal") as string) : undefined;
+    const waterGoal = formData.get("waterGoal") ? parseInt(formData.get("waterGoal") as string) : undefined;
 
     await updateProfile({
       age,
@@ -34,6 +48,7 @@ export default async function ProfilePage() {
       desiredWeight: desiredWeightKg ? Math.round(desiredWeightKg * 1000) : undefined,
       weightReference,
       kcalGoal,
+      waterGoal,
     });
 
     redirect("/dashboard");
@@ -128,6 +143,24 @@ export default async function ProfilePage() {
                   defaultValue={profile?.kcalGoal || ''}
                   className="bg-background/50 border-border rounded-xl h-12"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="waterGoal" className="flex items-center space-x-2">
+                  <Droplets size={16} className="text-primary" />
+                  <span>Meta de Água (ml)</span>
+                </Label>
+                <Input 
+                  id="waterGoal" 
+                  name="waterGoal" 
+                  type="number" 
+                  placeholder="Ex: 2000" 
+                  defaultValue={profile?.waterGoal || ''}
+                  className="bg-background/50 border-border rounded-xl h-12"
+                />
+                <p className="text-[10px] text-muted-foreground font-bold px-1 italic">
+                  Recomendado: {recommendedWaterGoal}ml (35ml por kg)
+                </p>
               </div>
             </div>
 

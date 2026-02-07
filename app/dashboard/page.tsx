@@ -276,12 +276,29 @@ export default async function DashboardPage() {
               <Droplets size={18} className="text-blue-500" />
               <span className="text-[10px] font-black uppercase tracking-widest">Água</span>
             </div>
-            <div className="flex items-end space-x-1">
-              <span className="text-4xl font-black text-foreground leading-none">{(totalWater / 1000).toFixed(1)}</span>
-              <span className="text-sm font-bold text-muted-foreground mb-1">L</span>
+            <div className="flex flex-col">
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-black text-foreground leading-none">{(totalWater / 1000).toFixed(1)}</span>
+                {!profile?.waterGoal && (
+                  <span className="text-sm font-bold text-muted-foreground mb-1">L</span>
+                )}
+              </div>
+              {profile?.waterGoal && (
+                <div className="flex items-center gap-1.5 mt-2">
+                  <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-blue-500 rounded-full transition-all duration-500" 
+                      style={{ width: `${Math.min(100, (totalWater / profile.waterGoal) * 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-black text-muted-foreground whitespace-nowrap">
+                    {(profile.waterGoal / 1000).toFixed(1)}L
+                  </span>
+                </div>
+              )}
             </div>
             <div className="text-[10px] font-black mt-2 text-muted-foreground uppercase tracking-wider">
-              Total de hoje
+              {profile?.waterGoal ? 'Meta diária' : 'Total de hoje'}
             </div>
           </Link>
 
