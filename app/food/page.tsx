@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Utensils, Flame, Zap, Wheat, Droplet, Trash2, Loader2, X } from 'lucide-react';
+import { ArrowLeft, Utensils, Flame, Zap, Wheat, Droplet, Trash2, Loader2, X, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { getFoodLogs, deleteFoodLog, deleteFoodItem, getWeeklyFoodStats } from "@/app/actions/food";
 import { useRouter } from 'next/navigation';
@@ -84,7 +84,12 @@ export default function FoodBreakdownPage() {
           <ArrowLeft size={24} />
         </Link>
         <h1 className="text-xl font-black text-foreground tracking-tight">Consumo de Hoje</h1>
-        <div className="w-10" />
+        <Link 
+          href="/log/food" 
+          className="p-2 -mr-2 text-red-500 bg-red-500/10 rounded-xl hover:bg-red-500/20 transition-colors"
+        >
+          <Plus size={24} />
+        </Link>
       </div>
 
       <div className="px-6 space-y-6">
