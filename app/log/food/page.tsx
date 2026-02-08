@@ -15,6 +15,13 @@ interface FoodItem {
   protein: number;
   carbs: number;
   fat: number;
+  baseQuantity?: number | null;
+  baseCalories?: number;
+  baseProtein?: number;
+  baseCarbs?: number;
+  baseFat?: number;
+  unit?: string;
+  currentAmount?: number | null;
 }
 
 interface Meal {
@@ -24,6 +31,15 @@ interface Meal {
   totalProtein: number;
   totalCarbs: number;
   totalFat: number;
+}
+
+function parseQuantity(str: string) {
+  const numMatch = str.match(/(\d+(?:\.\d+)?)/);
+  if (!numMatch) return { amount: null, unit: str };
+  
+  const amount = parseFloat(numMatch[0]);
+  const unit = str.replace(numMatch[0], '').trim();
+  return { amount, unit };
 }
 
 export default function LogFoodPage() {
@@ -38,18 +54,176 @@ export default function LogFoodPage() {
   const [editingFood, setEditingFood] = useState<any>(null);
 
   useEffect(() => {
+    const draft = sessionStorage.getItem('draft_meal');
     const pending = sessionStorage.getItem('pending_meals');
-    if (pending) {
+    
+    if (draft || pending) {
       try {
-        const meals = JSON.parse(pending);
-        setPreviewData({ meals });
-        setText('Repetido de histórico');
-        sessionStorage.removeItem('pending_meals');
+        let currentPreview: { meals: Meal[] } | null = null;
+        
+        if (draft) {
+          currentPreview = JSON.parse(draft);
+          sessionStorage.removeItem('draft_meal');
+        }
+        
+        if (pending) {
+          const newMeals = JSON.parse(pending);
+          sessionStorage.removeItem('pending_meals');
+          
+          if (!currentPreview) {
+            currentPreview = { meals: newMeals };
+          } else {
+            const mergedMeals = [...currentPreview.meals];
+            newMeals.forEach((m: Meal) => {
+              if (mergedMeals.length > 0) {
+                // Merge items into the first meal if it exists
+                mergedMeals[0].items = [...mergedMeals[0].items, ...m.items];
+                const totals = recalculateMealTotals(mergedMeals[0].items);
+                mergedMeals[0].totalCalories = totals.calories;
+                mergedMeals[0].totalProtein = totals.protein;
+                mergedMeals[0].totalCarbs = totals.carbs;
+                mergedMeals[0].totalFat = totals.fat;
+              } else {
+                mergedMeals.push(m);
+              }
+            });
+            currentPreview = { meals: mergedMeals };
+          }
+        }
+        
+        if (currentPreview) {
+          setPreviewData(currentPreview);
+          if (!text) setText('Refeição em edição');
+        }
       } catch (e) {
-        console.error('Failed to parse pending meals', e);
+        console.error('Failed to parse meals', e);
       }
     }
   }, []);
+
+  const handleRepetir = () => {
+    if (previewData) {
+      sessionStorage.setItem('draft_meal', JSON.stringify(previewData));
+    }
+    router.push('/log/food/recent');
+  };
+
+  const recalculateMealTotals = (items: FoodItem[]) => {
+    return items.reduce((acc, curr) => ({
+      calories: acc.calories + (curr.calories || 0),
+      protein: acc.protein + (curr.protein || 0),
+      carbs: acc.carbs + (curr.carbs || 0),
+      fat: acc.fat + (curr.fat || 0),
+    }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+  };
+
+  const updateMealItem = (mealIdx: number, itemIdx: number, newAmount: number) => {
+    if (!previewData) return;
+    
+    const newMeals = [...previewData.meals];
+    const meal = { ...newMeals[mealIdx] };
+    const items = [...meal.items];
+    const item = { ...items[itemIdx] };
+    
+    // If we don't have base values, try to initialize them from current state
+    if (item.baseQuantity === undefined) {
+      const { amount, unit } = parseQuantity(item.quantity);
+      item.baseQuantity = amount;
+      item.currentAmount = amount;
+      item.unit = unit;
+      item.baseCalories = item.calories;
+      item.baseProtein = item.protein;
+      item.baseCarbs = item.carbs;
+      item.baseFat = item.fat;
+    }
+
+    if (item.baseQuantity && item.baseQuantity > 0) {
+      const ratio = newAmount / item.baseQuantity;
+      item.currentAmount = newAmount;
+      item.quantity = `${newAmount}${item.unit || ''}`;
+      item.calories = Math.round((item.baseCalories || 0) * ratio);
+      item.protein = Math.round((item.baseProtein || 0) * ratio * 10) / 10;
+      item.carbs = Math.round((item.baseCarbs || 0) * ratio * 10) / 10;
+      item.fat = Math.round((item.baseFat || 0) * ratio * 10) / 10;
+      
+      items[itemIdx] = item;
+      meal.items = items;
+      
+      const totals = recalculateMealTotals(items);
+      meal.totalCalories = totals.calories;
+      meal.totalProtein = totals.protein;
+      meal.totalCarbs = totals.carbs;
+      meal.totalFat = totals.fat;
+      
+      newMeals[mealIdx] = meal;
+      setPreviewData({ meals: newMeals });
+    }
+  };
+
+  const deleteMealItem = (mealIdx: number, itemIdx: number) => {
+    if (!previewData) return;
+    
+    const newMeals = [...previewData.meals];
+    const meal = { ...newMeals[mealIdx] };
+    meal.items = meal.items.filter((_, i) => i !== itemIdx);
+    
+    if (meal.items.length === 0) {
+      newMeals.splice(mealIdx, 1);
+    } else {
+      const totals = recalculateMealTotals(meal.items);
+      meal.totalCalories = totals.calories;
+      meal.totalProtein = totals.protein;
+      meal.totalCarbs = totals.carbs;
+      meal.totalFat = totals.fat;
+      newMeals[mealIdx] = meal;
+    }
+    
+    setPreviewData(newMeals.length > 0 ? { meals: newMeals } : null);
+  };
+
+  const addRegisteredFoodToMeal = (food: any) => {
+    const { amount, unit } = parseQuantity(food.servingSize);
+    const newItem: FoodItem = {
+      name: food.name,
+      quantity: food.servingSize,
+      calories: food.calories,
+      protein: food.protein,
+      carbs: food.carbs,
+      fat: food.fat,
+      baseQuantity: amount,
+      currentAmount: amount,
+      unit: unit,
+      baseCalories: food.calories,
+      baseProtein: food.protein,
+      baseCarbs: food.carbs,
+      baseFat: food.fat
+    };
+
+    setPreviewData(prev => {
+      const meals = prev ? [...prev.meals] : [];
+      if (meals.length > 0) {
+        meals[0].items = [...meals[0].items, newItem];
+        const totals = recalculateMealTotals(meals[0].items);
+        meals[0].totalCalories = totals.calories;
+        meals[0].totalProtein = totals.protein;
+        meals[0].totalCarbs = totals.carbs;
+        meals[0].totalFat = totals.fat;
+      } else {
+        meals.push({
+          mealName: 'Nova Refeição',
+          items: [newItem],
+          totalCalories: newItem.calories,
+          totalProtein: newItem.protein,
+          totalCarbs: newItem.carbs,
+          totalFat: newItem.fat
+        });
+      }
+      return { meals };
+    });
+    
+    setShowRegisterForm(false);
+    if (!text) setText('Adicionado de alimentos registrados');
+  };
 
   useEffect(() => {
     if (showRegisterForm) {
@@ -186,6 +360,13 @@ export default function LogFoodPage() {
                       </div>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
+                          onClick={() => addRegisteredFoodToMeal(food)}
+                          className="p-2 text-muted-foreground hover:text-green-500 transition-colors"
+                          title="Adicionar à refeição"
+                        >
+                          <Plus size={18} />
+                        </button>
+                        <button 
                           onClick={() => handleEditFood(food)}
                           className="p-2 text-muted-foreground hover:text-blue-500 transition-colors"
                         >
@@ -292,7 +473,7 @@ export default function LogFoodPage() {
                     <div className="flex justify-between items-start border-b border-border/50 pb-4 gap-2">
                       <div className="min-w-0">
                         <h3 className="font-black text-foreground truncate">{meal.mealName}</h3>
-                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                        <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
                           P: {meal.totalProtein || 0}g • C: {meal.totalCarbs || 0}g • G: {meal.totalFat || 0}g
                         </p>
                       </div>
@@ -300,18 +481,47 @@ export default function LogFoodPage() {
                         {meal.totalCalories} kcal
                       </span>
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {meal.items.map((item, i) => (
-                        <div key={i} className="flex justify-between items-center text-sm">
-                          <div className="flex flex-col">
-                            <span className="font-bold text-foreground">{item.name}</span>
-                            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                              P: {item.protein}g • C: {item.carbs}g • G: {item.fat}g
-                            </span>
+                        <div key={i} className="flex flex-col gap-2 border-b border-border/20 last:border-0 pb-3 last:pb-0">
+                          <div className="flex justify-between items-start gap-4">
+                            <div className="flex-1 min-w-0">
+                              <span className="font-bold text-foreground block truncate">{item.name}</span>
+                              <div className="flex items-center gap-2 mt-1">
+                                <div className="flex items-center bg-black/5 rounded-xl px-3 py-1.5 transition-all">
+                                  <input 
+                                    type="number"
+                                    value={item.currentAmount || parseQuantity(item.quantity).amount || ''}
+                                    onChange={(e) => updateMealItem(idx, i, parseFloat(e.target.value) || 0)}
+                                    className="bg-transparent border-none outline-none p-0 text-sm text-foreground font-black w-14 focus:ring-0"
+                                  />
+                                  <span className="text-xs text-muted-foreground font-bold uppercase ml-1">
+                                    {item.unit || parseQuantity(item.quantity).unit}
+                                  </span>
+                                </div>
+                                <span className="text-xs text-red-500 font-bold">{item.calories} kcal</span>
+                              </div>
+                            </div>
+                            <button 
+                              onClick={() => deleteMealItem(idx, i)}
+                              className="p-2 text-muted-foreground hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 size={16} />
+                            </button>
                           </div>
-                          <div className="flex flex-col items-end">
-                            <span className="text-muted-foreground font-black">{item.quantity}</span>
-                            <span className="text-[10px] text-red-500 font-bold">{item.calories} kcal</span>
+                          <div className="flex gap-4 px-1">
+                            <div className="flex flex-col">
+                              <span className="text-[10px] text-muted-foreground font-black uppercase">Prot</span>
+                              <span className="text-sm font-bold">{item.protein}g</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[10px] text-muted-foreground font-black uppercase">Carbs</span>
+                              <span className="text-sm font-bold">{item.carbs}g</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[10px] text-muted-foreground font-black uppercase">Gord</span>
+                              <span className="text-sm font-bold">{item.fat}g</span>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -344,6 +554,27 @@ export default function LogFoodPage() {
                     <MessageSquare size={16} />
                   </button>
                 </form>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    onClick={handleRepetir}
+                    className="w-full border-2 border-muted hover:bg-muted font-black py-6 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  >
+                    <Utensils size={16} />
+                    REPETIR
+                  </Button>
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowRegisterForm(true)}
+                    className="w-full border-2 border-muted hover:bg-muted font-black py-6 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  >
+                    <Plus size={16} />
+                    CADASTRAR
+                  </Button>
+                </div>
 
                 <Button 
                   onClick={handleSave}

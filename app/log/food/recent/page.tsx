@@ -1,16 +1,18 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { ArrowLeft, Utensils, Loader2, Check, Search, Plus, Minus } from 'lucide-react';
+import { ArrowLeft, Utensils, Loader2, Check, Search, Plus, Minus, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { getRecentFoodItems } from "@/app/actions/food";
+import { getRecentFoodItems, getRegisteredFoods } from "@/app/actions/food";
 import { Button } from "@/components/ui/Button";
 
 interface FoodItem {
+  id?: string;
   name: string;
   quantity: string;
+  servingSize?: string;
   calories: number;
   protein: number;
   carbs: number;
@@ -23,6 +25,7 @@ interface FoodItem {
   baseFat?: number;
   unit?: string;
   currentAmount?: number | null;
+  isRegistered?: boolean;
 }
 
 function parseQuantity(str: string) {
@@ -40,26 +43,64 @@ export default function RecentFoodItemsPage() {
   const [selectedItems, setSelectedItems] = useState<FoodItem[]>([]);
   const [mealTitle, setMealTitle] = useState('');
   const [search, setSearch] = useState('');
+  const [isAppending, setIsAppending] = useState(false);
 
-  const { data: items, isLoading } = useQuery({
+  useEffect(() => {
+    const draft = sessionStorage.getItem('draft_meal');
+    if (draft) {
+      setIsAppending(true);
+    }
+  }, []);
+
+  const { data: recentItems, isLoading: loadingRecent } = useQuery({
     queryKey: ['recentFoodItems'],
     queryFn: () => getRecentFoodItems(50),
   });
 
+  const { data: registeredItems, isLoading: loadingRegistered } = useQuery({
+    queryKey: ['registeredFoods'],
+    queryFn: () => getRegisteredFoods(),
+  });
+
+  const isLoading = loadingRecent || loadingRegistered;
+
   const filteredItems = useMemo(() => {
-    if (!items) return [];
-    if (!search.trim()) return items;
+    // Map of name -> item
+    const dedupedMap = new Map<string, FoodItem>();
+
+    // 1. Add recent items first (they will be overwritten by registered if names match)
+    if (recentItems) {
+      recentItems.forEach((item: FoodItem) => {
+        dedupedMap.set(item.name.toLowerCase(), item);
+      });
+    }
+
+    // 2. Add registered items (they overwrite recent items with same name)
+    if (registeredItems) {
+      registeredItems.forEach((item: any) => {
+        const normalizedItem: FoodItem = {
+          ...item,
+          quantity: item.servingSize,
+          isRegistered: true
+        };
+        dedupedMap.set(item.name.toLowerCase(), normalizedItem);
+      });
+    }
+
+    let allItems = Array.from(dedupedMap.values());
+
+    if (!search.trim()) return allItems;
     const s = search.toLowerCase();
-    return items.filter((item: FoodItem) => 
+    return allItems.filter((item: FoodItem) => 
       item.name.toLowerCase().includes(s) || 
       item.quantity.toLowerCase().includes(s)
     );
-  }, [items, search]);
+  }, [recentItems, registeredItems, search]);
 
   const toggleItem = (item: FoodItem) => {
-    const isSelected = selectedItems.some(i => i.name === item.name && i.quantity === item.quantity);
+    const isSelected = selectedItems.some(i => i.name === item.name);
     if (isSelected) {
-      setSelectedItems(selectedItems.filter(i => !(i.name === item.name && i.quantity === item.quantity)));
+      setSelectedItems(selectedItems.filter(i => i.name !== item.name));
     } else {
       const { amount, unit } = parseQuantity(item.quantity);
       setSelectedItems([...selectedItems, {
@@ -109,10 +150,11 @@ export default function RecentFoodItemsPage() {
   }, [selectedItems]);
 
   const handleConfirm = () => {
-    if (selectedItems.length === 0 || !mealTitle.trim()) return;
+    if (selectedItems.length === 0) return;
+    if (!isAppending && !mealTitle.trim()) return;
 
     const meal = {
-      mealName: mealTitle,
+      mealName: mealTitle || 'Adição',
       items: selectedItems,
       totalCalories: totals.calories,
       totalProtein: totals.protein,
@@ -229,8 +271,7 @@ export default function RecentFoodItemsPage() {
                 disabled={!mealTitle.trim()}
                 className="w-full bg-red-500 hover:bg-red-600 text-white font-black py-8 rounded-3xl shadow-lg shadow-red-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
-                <Check size={20} />
-                SALVAR NO REGISTRO
+                PRÓXIMO
               </Button>
             </div>
           </div>
@@ -274,7 +315,7 @@ export default function RecentFoodItemsPage() {
         ) : filteredItems.length > 0 ? (
           <div className="grid grid-cols-1 gap-3">
             {filteredItems.map((item, idx) => {
-              const isSelected = selectedItems.some(i => i.name === item.name && i.quantity === item.quantity);
+              const isSelected = selectedItems.some(i => i.name === item.name);
               return (
                 <button
                   key={idx}
@@ -286,7 +327,12 @@ export default function RecentFoodItemsPage() {
                   }`}
                 >
                   <div className="flex-1">
-                    <h3 className="font-bold text-foreground">{item.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-foreground">{item.name}</h3>
+                      {item.isRegistered && (
+                        <Sparkles size={12} className="text-red-500 fill-red-500" />
+                      )}
+                    </div>
                     <div className="flex items-center gap-3 mt-1">
                       <span className="text-xs text-muted-foreground font-medium uppercase">{item.quantity}</span>
                       <span className="text-xs text-red-500 font-bold">{item.calories} kcal</span>
@@ -331,10 +377,10 @@ export default function RecentFoodItemsPage() {
                 </div>
               </div>
               <Button 
-                onClick={() => setStep(2)}
+                onClick={isAppending ? handleConfirm : () => setStep(2)}
                 className="w-full bg-red-500 hover:bg-red-600 text-white font-black py-8 rounded-3xl shadow-lg shadow-red-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
-                PRÓXIMO
+                {isAppending ? 'ADICIONAR' : 'PRÓXIMO'}
               </Button>
             </div>
           </div>
