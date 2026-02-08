@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Check, Camera } from 'lucide-react';
+import { ArrowLeft, Check, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { uploadProgressPhotos } from '@/app/actions/progress-photos';
 import { SubmitButton } from '@/components/SubmitButton';
@@ -17,6 +17,16 @@ export default function LogProgressPage() {
       </div>
 
       <div className="flex-1 p-6 space-y-8">
+        <div className="flex flex-col items-center justify-center space-y-4 mb-2">
+          <div className="bg-primary/10 w-20 h-20 rounded-[2rem] flex items-center justify-center text-primary shadow-lg shadow-primary/10">
+            <ImageIcon size={40} strokeWidth={2.5} />
+          </div>
+          <div className="text-center space-y-1">
+            <h2 className="text-2xl font-black text-foreground tracking-tight">Fotos de Hoje</h2>
+            <p className="text-muted-foreground font-medium text-sm">Registre seu progresso visual.</p>
+          </div>
+        </div>
+
         <div className="bg-primary/5 p-6 rounded-[2rem] border border-primary/10 text-center space-y-2">
           <p className="text-primary font-black text-lg uppercase tracking-tighter">Registro Quinzenal</p>
           <p className="text-sm text-muted-foreground font-bold leading-relaxed">

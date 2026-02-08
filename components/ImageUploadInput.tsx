@@ -65,8 +65,8 @@ export function ImageUploadInput({ name, label }: ImageUploadInputProps) {
           </>
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground pointer-events-none">
-            <Camera size={32} className="mb-2 opacity-50" />
-            <span className="text-xs font-bold uppercase tracking-wider">Selecionar</span>
+            <ImageIcon size={32} className="mb-2 text-primary/40" />
+            <span className="text-xs font-bold uppercase tracking-wider opacity-60">Selecionar</span>
           </div>
         )}
       </div>

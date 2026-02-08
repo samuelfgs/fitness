@@ -449,44 +449,37 @@ export async function getWeeklyFoodStats() {
   const cookieStore = await cookies();
   const timezone = cookieStore.get('user-timezone')?.value || 'America/Sao_Paulo';
   
-  // Get today's range in user's timezone
-  const { end: todayEnd } = getTodayRange(timezone);
+  // Get today's range in user's timezone (returns UTC dates)
+  const { start: todayStartUTC } = getTodayRange(timezone);
   
-  // Calculate the most recent Monday
-  // getDay() returns 0 for Sunday, 1 for Monday, ..., 6 for Saturday
-  const currentDay = todayEnd.getDay();
+  // Get the current day of the week in the target timezone
+  const now = new Date();
+  const tzDate = new Date(now.toLocaleString('en-US', { timeZone: timezone }));
+  const currentDay = tzDate.getDay(); // 0 for Sunday, 1 for Monday, etc.
+  
+  // Calculate how many days to subtract to get to the most recent Monday
   const diffToMonday = (currentDay === 0 ? 6 : currentDay - 1);
-  const monday = new Date(todayEnd.getTime());
-  monday.setDate(todayEnd.getDate() - diffToMonday);
-  monday.setHours(0, 0, 0, 0);
-
-  // We want to show 7 days starting from that Monday
-  const sevenDaysAgo = monday;
-  // We should also ensure we fetch logs up to the end of the week if needed, 
-  // but usually for a "week stats" we want the current week.
-  // Let's stick to the last 7 days but starting the SEQUENCE on the correct day if the user prefers,
-  // OR actually showing the "Current Week" (Mon-Sun).
   
-  // The user said "the week is starting at sat, let's make it start on seg".
-  // This implies the 7-day window should start on Monday.
-  const endOfPeriod = new Date(monday.getTime() + 7 * 24 * 60 * 60 * 1000 - 1);
+  // Monday start at 00:00:00 in user's timezone
+  const mondayStartUTC = new Date(todayStartUTC.getTime() - diffToMonday * 24 * 60 * 60 * 1000);
+  const endOfPeriod = new Date(mondayStartUTC.getTime() + 7 * 24 * 60 * 60 * 1000 - 1);
 
   const logs = await db.select()
     .from(foodLogs)
     .where(
         and(
             eq(foodLogs.userId, user.id),
-            gte(foodLogs.date, sevenDaysAgo),
+            gte(foodLogs.date, mondayStartUTC),
             lte(foodLogs.date, endOfPeriod)
         )
     )
     .orderBy(foodLogs.date);
 
-  // We need to group logs by their date in the user's timezone
+  // Group logs by their date in the user's timezone
   const dailyStatsMap = new Map();
   
   for (let i = 0; i < 7; i++) {
-    const d = new Date(monday.getTime() + i * 24 * 60 * 60 * 1000);
+    const d = new Date(mondayStartUTC.getTime() + i * 24 * 60 * 60 * 1000);
     const dateStr = d.toLocaleDateString('en-CA', { timeZone: timezone }); // YYYY-MM-DD
     const dayName = d.toLocaleDateString('pt-BR', { weekday: 'short', timeZone: timezone }).replace('.', '').toUpperCase();
     

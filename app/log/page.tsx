@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Dumbbell, Droplets, Scale, Footprints, X, Utensils, Camera } from 'lucide-react';
+import { ArrowLeft, Dumbbell, Droplets, Scale, Footprints, X, Utensils, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LogSelectorPage() {
@@ -23,7 +23,7 @@ export default function LogSelectorPage() {
     {
       title: 'Fotos',
       description: 'Acompanhe seu progresso visual',
-      icon: Camera,
+      icon: ImageIcon,
       href: '/log/progress',
       color: 'bg-primary',
       textColor: 'text-primary',

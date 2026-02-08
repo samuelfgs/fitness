@@ -3,7 +3,7 @@ import { Activity, WeightEntry, ActivityType } from '@/lib/types';
 import ActivityCard from '@/components/ActivityCard';
 import BottomNav from '@/components/BottomNav';
 import { UserAvatar } from '@/components/UserAvatar';
-import { TrendingUp, ArrowRight, Activity as ActivityIcon, Droplets, Footprints, Utensils, Camera } from 'lucide-react';
+import { TrendingUp, ArrowRight, Activity as ActivityIcon, Droplets, Footprints, Utensils, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
@@ -215,7 +215,7 @@ export default async function DashboardPage() {
           <Link href="/log/progress" className="block bg-primary text-primary-foreground p-6 rounded-[2rem] shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all active:scale-95">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <Camera size={24} className="text-white" />
+                <ImageIcon size={24} className="text-white" />
               </div>
               <div>
                 <h3 className="text-lg font-black leading-tight">Hora da foto!</h3>
@@ -348,7 +348,7 @@ export default async function DashboardPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-primary/10 rounded-xl">
-                  <Camera size={20} className="text-primary" />
+                  <ImageIcon size={20} className="text-primary" />
                 </div>
                 <div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground block">Evolução</span>
